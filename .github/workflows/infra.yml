@@ -1,0 +1,60 @@
+# .github/workflows/deploy.yml
+
+name: Deploy Terraform with Tofu
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy Infrastructure with Tofu
+    runs-on: ubuntu-latest
+
+    container:
+      image: bridgecrew/tofu:latest  # Use the Tofu Docker image with Terraform pre-installed
+
+    permissions:
+      id-token: write  # Needed to use OIDC authentication
+      contents: read   # Allows reading repository contents
+
+    steps:
+      # Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Configure AWS credentials using OIDC
+      - name: Configure AWS credentials with OIDC
+        id: aws-creds
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::<YOUR_AWS_ACCOUNT_ID>:role/<YOUR_ROLE_NAME>  # Use the role ARN created earlier
+          aws-region: eu-central-1
+
+      # Initialize Terraform
+      - name: Terraform Init
+        working-directory: ./folder/tofu
+        env:
+          TOFU_API_KEY: ${{ secrets.TOFU_API_KEY }}
+          # Add additional environment variables here if needed
+        run: |
+          terraform init \
+            -backend-config "bucket=$TF_VAR_tf_state_bucket" \ 
+            -backend-config "lock_table=$TF_VAR_tf_state_table" \ 
+            -backend-config "region=$TF_VAR_region" \ 
+            -backend-config "key=$TF_VAR_application/$TF_VAR_environment"
+
+      # Apply Terraform configuration using Tofu
+      - name: Terraform Apply with Tofu
+        working-directory: ./folder/tofu
+        env:
+          TOFU_API_KEY: ${{ secrets.TOFU_API_KEY }}
+          # Add additional environment variables here if needed
+        run: |
+          tofu run terraform apply -auto-approve
+
+      # Optional: Output Terraform state or other results
+      - name: Show Terraform Outputs
+        working-directory: ./folder/tofu
+        run: terraform output

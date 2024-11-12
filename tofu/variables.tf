@@ -1,8 +1,8 @@
-variable "github-pat-username" {
+variable "github_pat_username" {
   type        = string
 }
 
-variable "github-pat-token" {
+variable "github_pat_token" {
   type        = string
   sensitive   = true
 }

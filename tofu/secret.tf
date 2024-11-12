@@ -1,12 +1,13 @@
-resource "aws_secretsmanager_secret" "github_pat_secret" {
+resource "aws_secretsmanager_secret" "github-pat-secret" {
   name        = "github-pat"
   description = "GitHub Personal Access Token for accessing private container registry"
 }
 
-resource "aws_secretsmanager_secret_version" "github_pat_secret_version" {
-  secret_id     = aws_secretsmanager_secret.github_pat_secret.id
+resource "aws_secretsmanager_secret_version" "github-pat-secret-version" {
+  secret_id     = aws_secretsmanager_secret.github-pat-secret.id
   secret_string = jsonencode({
-    { "username":"<gh-username>", "password":"<PAT-token>" }
+    "username" = var.github_pat_username, 
+    "password" = var.github_pat_token
   })
 }
 

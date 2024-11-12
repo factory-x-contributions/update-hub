@@ -7,6 +7,11 @@ on:
     branches:
       - main
 
+env:
+  AWS_IAM_ROLE_TOFU: ${{ vars.AWS_IAM_ROLE_TOFU }}
+  AWS_DEFAULT_REGION: "eu-central-1"
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+
 jobs:
   deploy:
     name: Deploy Infrastructure with Tofu
@@ -27,34 +32,27 @@ jobs:
       # Configure AWS credentials using OIDC
       - name: Configure AWS credentials with OIDC
         id: aws-creds
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4.0.2
         with:
-          role-to-assume: arn:aws:iam::<YOUR_AWS_ACCOUNT_ID>:role/<YOUR_ROLE_NAME>  # Use the role ARN created earlier
-          aws-region: eu-central-1
+          role-to-assume: ${{ env.AWS_IAM_ROLE_TOFU }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       # Initialize Terraform
       - name: Terraform Init
-        working-directory: ./folder/tofu
-        env:
-          TOFU_API_KEY: ${{ secrets.TOFU_API_KEY }}
-          # Add additional environment variables here if needed
+        working-directory: ./tofu
         run: |
           terraform init \
-            -backend-config "bucket=$TF_VAR_tf_state_bucket" \ 
-            -backend-config "lock_table=$TF_VAR_tf_state_table" \ 
-            -backend-config "region=$TF_VAR_region" \ 
-            -backend-config "key=$TF_VAR_application/$TF_VAR_environment"
+            -backend-config "bucket=state-bucket-${{ env.AWS_ACCOUNT_ID }}" \
+            -backend-config "region=${{ env.AWS_DEFAULT_REGION }}" \
+            -backend-config "key=${{ github.GITHUB_REPOSITORY }}-tfstate"
 
       # Apply Terraform configuration using Tofu
       - name: Terraform Apply with Tofu
-        working-directory: ./folder/tofu
-        env:
-          TOFU_API_KEY: ${{ secrets.TOFU_API_KEY }}
-          # Add additional environment variables here if needed
+        working-directory: ./tofu
         run: |
           tofu run terraform apply -auto-approve
 
       # Optional: Output Terraform state or other results
       - name: Show Terraform Outputs
-        working-directory: ./folder/tofu
+        working-directory: ./tofu
         run: terraform output

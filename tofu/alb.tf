@@ -6,10 +6,15 @@ resource "aws_alb" "irs" {
 
 resource "aws_alb_target_group" "irs" {
   name        = "irs-target-group"
-  port        = 80
+  port        = var.container_port
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "ip"
+
+  health_check {
+      path    = "/swagger/index.html"
+      port    = var.container_port
+  }
 }
 
 # Redirect all traffic from the ALB to the target group
@@ -21,6 +26,10 @@ resource "aws_alb_listener" "irs" {
   default_action {
     target_group_arn = aws_alb_target_group.irs.id
     type             = "forward"
+  }
+
+  lifecycle {
+    replace_triggered_by = [aws_alb_target_group.irs]
   }
 }
 

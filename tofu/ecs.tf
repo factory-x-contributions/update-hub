@@ -50,13 +50,21 @@ resource "aws_ecs_task_definition" "irs_container_task" {
       repositoryCredentials = {
         credentialsParameter = aws_secretsmanager_secret.github-pat-secret.arn
       },
+      healthCheck = {
+        retries = 10
+        command = [ "CMD-SHELL", "curl -f http://localhost:8080/swagger/index.html || exit 1" ]
+        timeout = 5
+        interval = 10
+        startPeriod = 10
+      },
       logConfiguration = {
-        logDriver = "awslogs"
+        logDriver = "awslogs",
         options = {
-          "awslogs-group"         = "/ecs/irs-service"
-          "awslogs-stream-prefix" = "ecs"
+          awslogs-group = aws_cloudwatch_log_group.irs_log_group.name,
+          awslogs-region = data.aws_region.current.name,
+          awslogs-stream-prefix = "ecs"
         }
-      }
+      },
     }
   ])
 }
@@ -76,7 +84,7 @@ resource "aws_ecs_service" "irs" {
 
   load_balancer {
     target_group_arn = aws_alb_target_group.irs.id
-    container_name   = "irs-app"
+    container_name   = jsondecode(aws_ecs_task_definition.irs_container_task.container_definitions)[0].name
     container_port   = var.container_port
   }
 

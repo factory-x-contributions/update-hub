@@ -93,4 +93,4 @@ jobs:
             domain_name = "cdm-dev.xo.siemens.cloud"
             github_pat_token = ${{ secrets.PAT_AWSREADREGISTRY }}
             ithub_pat_username = "florian.gerdes@siemens.com"
-          var_file: global.tfvars
+          var_file: ./tofu/global.tfvars

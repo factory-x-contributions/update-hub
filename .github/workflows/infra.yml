@@ -32,11 +32,11 @@ jobs:
           role-to-assume: ${{ env.AWS_IAM_ROLE_TOFU }}
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
-      - name: terraform plan
-        uses: dflook/tofu-plan@v1.44.0
-        with:
-          path: tofu
-          backend_config: |
-            bucket=state-bucket-${{ env.AWS_ACCOUNT_ID }}
-            region=${{ env.AWS_DEFAULT_REGION }}
-            key=${{ github.GITHUB_REPOSITORY }}-tfstate
+       # Initialize Terraform
+      - name: Terraform Init
+        working-directory: ./tofu
+        run: |
+          terraform init \
+            -backend-config "bucket=state-bucket-${{ env.AWS_ACCOUNT_ID }}" \
+            -backend-config "region=${{ env.AWS_DEFAULT_REGION }}" \
+            -backend-config "key=${{ github.GITHUB_REPOSITORY }}-tfstate"

@@ -42,7 +42,6 @@ resource "aws_ecs_task_definition" "irs_container_task" {
       portMappings = [
         {
           containerPort = var.container_port
-          hostPort      = var.container_port
           protocol      = "tcp"
         }
       ]
@@ -52,7 +51,7 @@ resource "aws_ecs_task_definition" "irs_container_task" {
       },
       healthCheck = {
         retries = 10
-        command = [ "CMD-SHELL", "curl -f http://localhost:8080/swagger/index.html || exit 1" ]
+        command = [ "CMD-SHELL", "curl -f http://localhost:${var.container_port}/swagger/index.html || exit 1" ]
         timeout = 5
         interval = 10
         startPeriod = 10

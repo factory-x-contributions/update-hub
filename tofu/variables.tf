@@ -1,10 +1,17 @@
+variable "domain_name" {
+  type    = string
+  default = "cdm-dev.xo.siemens.cloud"
+}
+
+//---------------------------------------------------------------------
+
 variable "github_pat_username" {
-  type        = string
+  type = string
 }
 
 variable "github_pat_token" {
-  type        = string
-  sensitive   = true
+  type      = string
+  sensitive = true
 }
 
 
@@ -12,16 +19,16 @@ variable "github_pat_token" {
 
 variable "image" {
   description = "Image URI"
-  type = string
+  type        = string
 }
 
 variable "container_port" {
-  type = number
+  type    = number
   default = 8080
 }
 
 variable "container_environment" {
-  type = list(map(string))
+  type    = list(map(string))
   default = [{}]
 }
 

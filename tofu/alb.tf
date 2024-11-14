@@ -20,8 +20,9 @@ resource "aws_alb_target_group" "irs" {
 # Redirect all traffic from the ALB to the target group
 resource "aws_alb_listener" "irs" {
   load_balancer_arn = aws_alb.irs.id
-  port              = var.container_port
-  protocol          = "HTTP"
+  port              = 443
+  protocol          = "HTTPS"
+  certificate_arn   = aws_acm_certificate_validation.certificate_validation.certificate_arn
 
   default_action {
     target_group_arn = aws_alb_target_group.irs.id
@@ -41,8 +42,8 @@ resource "aws_security_group" "lb" {
 
     ingress {
         protocol    = "tcp"
-        from_port   = var.container_port
-        to_port     = var.container_port
+        from_port   = 443
+        to_port     = 443
         cidr_blocks = ["0.0.0.0/0"]
     }
 

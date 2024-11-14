@@ -4,8 +4,6 @@ name: Deploy Terraform with Tofu
 
 on:
   push:
-    branches:
-      - main
 
 env:
   AWS_IAM_ROLE_TOFU: ${{ vars.AWS_IAM_ROLE_TOFU }}
@@ -51,8 +49,10 @@ jobs:
         working-directory: ./tofu
         run: |
           tofu run terraform apply -auto-approve
+        if: github.ref == 'refs/heads/master'
 
       # Optional: Output Terraform state or other results
       - name: Show Terraform Outputs
         working-directory: ./tofu
         run: terraform output
+        if: github.ref == 'refs/heads/master'

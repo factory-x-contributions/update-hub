@@ -69,7 +69,7 @@ jobs:
     steps:
       # Checkout the repository
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # Configure AWS credentials using OIDC
       - name: Configure AWS credentials with OIDC
@@ -80,6 +80,7 @@ jobs:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: terraform plan
+        id: terraform-plan
         uses: dflook/tofu-plan@v1.44.0
         with:
           path: tofu
@@ -95,3 +96,15 @@ jobs:
             github_pat_token = "${{ secrets.PAT_AWSREADREGISTRY }}"
             github_pat_username = "florian.gerdes@siemens.com"
           var_file: ./tofu/global.tfvars
+
+      - name: terraform apply
+        if: github.ref == 'refs/heads/master'
+        uses: dflook/tofu-apply@v1.44.0
+        with:
+          path: tofu
+          backend_config: |
+            bucket=state-bucket-${{ env.AWS_ACCOUNT_ID }}
+            region=${{ env.AWS_DEFAULT_REGION }}
+            key=${{ github.repository }}-tfstate
+          plan_path: ${{ steps.terraform-plan.outputs.plan_path }}
+          auto_approve: true

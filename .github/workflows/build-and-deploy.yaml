@@ -6,6 +6,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  REPOSITORY: ${{ github.repository }}
   AWS_IAM_ROLE_TOFU: ${{ vars.AWS_IAM_ROLE_TOFU }}
   AWS_DEFAULT_REGION: "eu-central-1"
   AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
@@ -85,12 +86,12 @@ jobs:
           backend_config: |
             bucket=state-bucket-${{ env.AWS_ACCOUNT_ID }}
             region=${{ env.AWS_DEFAULT_REGION }}
-            key=${{ github.GITHUB_REPOSITORY }}-tfstate
+            key=${{ github.repository }}-tfstate
           variables: |
             image = "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:${{needs.build-container.outputs.digist}}"
             container_port = 8080
-            repository = ${{ github.GITHUB_REPOSITORY }}
+            repository = "${{ github.repository }}"
             domain_name = "cdm-dev.xo.siemens.cloud"
-            github_pat_token = ${{ secrets.PAT_AWSREADREGISTRY }}
+            github_pat_token = "${{ secrets.PAT_AWSREADREGISTRY }}"
             ithub_pat_username = "florian.gerdes@siemens.com"
           var_file: ./tofu/global.tfvars

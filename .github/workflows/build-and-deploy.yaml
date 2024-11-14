@@ -1,0 +1,96 @@
+name: "Service Container"
+
+on:
+  push:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  AWS_IAM_ROLE_TOFU: ${{ vars.AWS_IAM_ROLE_TOFU }}
+  AWS_DEFAULT_REGION: "eu-central-1"
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+
+jobs:
+  build-container:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    outputs:
+      digist: ${{ steps.build-push-action.outputs.digest }}
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      # Build and push Docker image with Buildx (don't push on PR)
+      # https://github.com/docker/build-push-action
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        id: build-push-action
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' && github.event_name != 'schedule' }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          labels: ${{ steps.meta.outputs.labels }}
+        
+
+  deploy:
+    name: Deploy Infrastructure with Tofu
+    runs-on: ubuntu-latest
+    needs: build-container
+
+    permissions:
+      id-token: write  # Needed to use OIDC authentication
+      contents: read   # Allows reading repository contents
+
+    steps:
+      # Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Configure AWS credentials using OIDC
+      - name: Configure AWS credentials with OIDC
+        id: aws-creds
+        uses: aws-actions/configure-aws-credentials@v4.0.2
+        with:
+          role-to-assume: ${{ env.AWS_IAM_ROLE_TOFU }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      - name: terraform plan
+        uses: dflook/tofu-plan@v1.44.0
+        with:
+          path: tofu
+          backend_config: |
+            bucket=state-bucket-${{ env.AWS_ACCOUNT_ID }}
+            region=${{ env.AWS_DEFAULT_REGION }}
+            key=${{ github.GITHUB_REPOSITORY }}-tfstate
+          variables: |
+            image = "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:${{needs.build-container.outputs.digist}}"
+            container_port = 8080
+            repository = ${{ github.GITHUB_REPOSITORY }}
+            domain_name = "cdm-dev.xo.siemens.cloud"
+            github_pat_token = ${{ secrets.PAT_AWSREADREGISTRY }}
+            ithub_pat_username = "florian.gerdes@siemens.com"
+          var_file: global.tfvars

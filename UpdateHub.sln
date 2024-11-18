@@ -1,8 +1,8 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "irs", "irs\irs.csproj", "{3A199F89-8144-4253-A839-037F428C4297}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UpdateHub", "UpdateHub\UpdateHub.csproj", "{3A199F89-8144-4253-A839-037F428C4297}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "irs.Tests", "irs.Tests\irs.Tests.csproj", "{19EBC683-E2B6-427D-8CEA-70B7219D1EA6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UpdateHub.Tests", "UpdateHub.Tests\UpdateHub.Tests.csproj", "{19EBC683-E2B6-427D-8CEA-70B7219D1EA6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

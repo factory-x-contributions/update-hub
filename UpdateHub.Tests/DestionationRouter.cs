@@ -1,7 +1,8 @@
 using Xunit;
-using irs.DestinationRouter;
+using UpdateHub.DestinationRouter;
 
-namespace irs.UnitTests.DestionationRouter
+namespace UpdateHub
+  .UnitTests.DestionationRouter
 {
 
   public class Tests

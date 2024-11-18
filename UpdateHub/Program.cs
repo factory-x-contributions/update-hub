@@ -3,6 +3,7 @@
 
 using System.Reflection;
 using Microsoft.OpenApi.Models;
+using UpdateHub;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,8 +17,8 @@ builder.Services.AddSwaggerGen(c =>
 {
   c.SwaggerDoc("v1", new OpenApiInfo
   {
-    Title = "Information Requesting Service", Version = "v1",
-    Description = "Example service to communicate with the IPS.",
+    Title = "UpdateHub", Version = "v1",
+    Description = "Example service to communicate with the different IPS.",
   });
   // using System.Reflection;
   var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -33,10 +34,7 @@ app.UseSwaggerUI();
 #else
 app.MapGet("/version", () =>
   {
-    // @TODO: This is a workaround to get the version from the git commit hash
-    using var repo = new LibGit2Sharp.Repository("../");
-    var commit = repo.Head.Tip;
-    var version = new ServiceVersion(0, 0, 0, commit.Sha);
+    var version = new ServiceVersion(0, 0, 0, GitHash.Value);
     return Results.Json(version);
   })
   .WithName("version")

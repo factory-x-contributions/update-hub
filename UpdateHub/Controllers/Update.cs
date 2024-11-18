@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
-namespace irs.Controllers;
+namespace UpdateHub.Controllers;
 
 [ApiController]
 [Route("[controller]")]

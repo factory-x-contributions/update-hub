@@ -7,16 +7,19 @@ EXPOSE 8081
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
+# Used to pass the git hash to the build
+ARG GIT_HASH=unknown
 WORKDIR /src
-COPY ["irs/", "irs/"]
-RUN dotnet restore "irs/irs.csproj"
+COPY ["UpdateHub/", "UpdateHub/"]
+RUN dotnet restore "UpdateHub/UpdateHub.csproj"
 COPY . .
-WORKDIR "/src/irs"
-RUN dotnet build "irs.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/UpdateHub"
+RUN ./updateGitHash.bash
+RUN dotnet build "UpdateHub.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "irs.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "UpdateHub.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 
@@ -24,4 +27,4 @@ EXPOSE 8080
 
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "irs.dll"]
+ENTRYPOINT ["dotnet", "UpdateHub.dll"]

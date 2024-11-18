@@ -1,6 +1,6 @@
-using irs.DestinationRouter;
+using UpdateHub.DestinationRouter;
 
-namespace irs.DestinationRouter
+namespace UpdateHub.DestinationRouter
 {
   public class DestinationRouter
   {

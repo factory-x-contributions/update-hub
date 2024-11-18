@@ -17,7 +17,7 @@ app.MapGet("/version", () =>
 using System.ComponentModel;
 using Microsoft.AspNetCore.Mvc;
 
-namespace irs.Controllers;
+namespace UpdateHub.Controllers;
 
 [ApiController]
 [Route("[controller]")]
@@ -39,9 +39,7 @@ public class VersionController : ControllerBase
   [Produces("application/json")]
   public async Task<IResult> GetVersion()
   {
-    using var repo = new LibGit2Sharp.Repository(".");
-    var commit = repo.Head.Tip;
-    var version = new Version(0, 0, 0, commit.Sha);
+    var version = new Version(0, 0, 0, GitHash.Value);
     return Results.Json(version);
   }
 

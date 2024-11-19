@@ -10,8 +10,8 @@ resource "aws_security_group" "ecs_tasks" {
 
     ingress {
         protocol        = "tcp"
-        from_port       = var.container_port
-        to_port         = var.container_port
+        from_port       = var.port
+        to_port         = var.port
         security_groups = [aws_security_group.lb.id]
     }
 
@@ -23,49 +23,29 @@ resource "aws_security_group" "ecs_tasks" {
     }
 }
 
+data "template_file" "irs_container_definition" {
+  template = file("./templates/irs.json.tpl")
+
+  vars = {
+    name                  = var.name
+    image                 = var.image
+    port                  = var.port
+    repositoryCredentials = aws_secretsmanager_secret.github-pat-secret.arn
+    aws_region            = data.aws_region.current.name
+    log_group             = aws_cloudwatch_log_group.irs_log_group.name
+  }
+}
+
 # ECS Task Definition with Container Definition
 resource "aws_ecs_task_definition" "irs_container_task" {
-  family                   = "irs-service-task"
+  family                   = var.service_name
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"     # 0.25 vCPU
   memory                   = "512"     # 512 MiB
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
-  container_definitions = jsonencode([
-    {
-      name        = "irs-container"
-      image       = var.image
-      cpu         = 256
-      memory      = 512
-      essential   = true
-      portMappings = [
-        {
-          containerPort = var.container_port
-          protocol      = "tcp"
-        }
-      ]
-      environment = var.container_environment
-      repositoryCredentials = {
-        credentialsParameter = aws_secretsmanager_secret.github-pat-secret.arn
-      },
-      healthCheck = {
-        retries = 10
-        command = [ "CMD-SHELL", "curl -f http://localhost:${var.container_port}/swagger/index.html || exit 1" ]
-        timeout = 5
-        interval = 10
-        startPeriod = 10
-      },
-      logConfiguration = {
-        logDriver = "awslogs",
-        options = {
-          awslogs-group = aws_cloudwatch_log_group.irs_log_group.name,
-          awslogs-region = data.aws_region.current.name,
-          awslogs-stream-prefix = "ecs"
-        }
-      },
-    }
-  ])
+  container_definitions    = data.template_file.irs_container_definition.rendered
 }
 
 resource "aws_ecs_service" "irs" {
@@ -83,8 +63,12 @@ resource "aws_ecs_service" "irs" {
 
   load_balancer {
     target_group_arn = aws_alb_target_group.irs.id
-    container_name   = jsondecode(aws_ecs_task_definition.irs_container_task.container_definitions)[0].name
-    container_port   = var.container_port
+    container_name   = var.name
+    container_port   = var.port
+  }
+
+  lifecycle {
+    ignore_changes = [task_definition]
   }
 
   depends_on = [aws_alb_listener.irs, aws_iam_role_policy_attachment.ecs-task-execution-role-policy-attachment]

@@ -17,19 +17,28 @@ variable "github_pat_token" {
 
 //---------------------------------------------------------------------
 
+variable "service_name" {
+  type    = string
+}
+
 variable "image" {
   description = "Image URI"
   type        = string
 }
 
-variable "container_port" {
+variable "name" {
+  type    = string
+  default = "irs"
+}
+
+variable "port" {
   type    = number
   default = 8080
 }
 
-variable "container_environment" {
-  type    = list(map(string))
-  default = [{}]
+variable "environment" {
+  type    = string
+  default = ""
 }
 
 //-----------------------------------------------------------------------

@@ -1,0 +1,60 @@
+name: "Infrastructure"
+
+on:
+  push:
+    paths:
+      - tofu/**
+
+jobs:
+  deploy:
+    name: Apply infrastructure
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write  # Needed to use OIDC authentication
+      contents: read   # Allows reading repository contents
+
+    steps:
+      # Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Configure AWS credentials using OIDC
+      - name: Configure AWS credentials with OIDC
+        id: aws-creds
+        uses: aws-actions/configure-aws-credentials@v4.0.2
+        with:
+          role-to-assume: ${{ vars.AWS_IAM_ROLE_TOFU }}
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+
+      - name: terraform plan
+        id: terraform-plan
+        uses: dflook/tofu-plan@v1.44.0
+        with:
+          path: tofu
+          backend_config: |
+            bucket=state-bucket-${{ vars.AWS_ACCOUNT_ID }}
+            region=${{ vars.AWS_DEFAULT_REGION }}
+            key=${{ github.repository }}-tfstate
+          variables: |
+            name = "irs"
+            port = 8080
+            image = "${{ vars.REGISTRY }}/${{ github.repository }}:latest"
+            service_name = "${{ github.repository }}-service-task"
+            repository = "${{ github.repository }}"
+            domain_name = "cdm-dev.xo.siemens.cloud"
+            github_pat_token = "${{ secrets.PAT_AWSREADREGISTRY }}"
+            github_pat_username = "florian.gerdes@siemens.com"
+          var_file: ./tofu/global.tfvars
+
+      - name: terraform apply
+        if: github.ref == 'refs/heads/master'
+        uses: dflook/tofu-apply@v1.44.0
+        with:
+          path: tofu
+          backend_config: |
+            bucket=state-bucket-${{ vars.AWS_ACCOUNT_ID }}
+            region=${{ vars.AWS_DEFAULT_REGION }}
+            key=${{ github.repository }}-tfstate
+          plan_path: ${{ steps.terraform-plan.outputs.plan_path }}
+          auto_approve: true

@@ -82,6 +82,7 @@ jobs:
   deploy-container:
     name: Deploy container
     runs-on: ubuntu-latest
+    needs: build-container
     permissions:
       id-token: write  # Needed to use OIDC authentication
       contents: read   # Allows reading repository contents
@@ -110,9 +111,9 @@ jobs:
 
       - name: Register new Task definition
         run: |
-          FILE="/tofu/templates/irs.json"
+          FILE="./tofu/templates/irs.json"
           cat <<< $(jq '.[].name = "${{ env.NAME }}"' $FILE ) > $FILE
-          cat <<< $(jq '.[].image = "${{ vars.REGISTRY }}/${{ github.repository }}:latest"' $FILE ) > $FILE
+          cat <<< $(jq '.[].image = "${{ vars.REGISTRY }}/${{ github.repository }}:${{ needs.build-container.outputs.digest }}"' $FILE ) > $FILE
           cat <<< $(jq '.[].repositoryCredentials.credentialsParameter = "${{ steps.terraform-output.outputs.github_pat_secret_arn }}"' $FILE ) > $FILE
           cat <<< $(jq '.[].logConfiguration.options.awslogs-group = "${{ steps.terraform-output.outputs.irs_log_group_name }}"' $FILE ) > $FILE
           cat <<< $(jq '.[].logConfiguration.options.awslogs-region = "${{ vars.AWS_DEFAULT_REGION }}"' $FILE ) > $FILE

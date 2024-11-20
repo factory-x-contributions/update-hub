@@ -9,3 +9,11 @@ output "irs_log_group_name" {
 output "ecs_task_execution_role_arn" {
   value = aws_iam_role.ecs_task_execution_role.arn
 }
+
+output "aws_ecs_service_name" {
+  value = aws_ecs_service.irs.name
+}
+
+output "aws_ecs_cluster_name" {
+  value = aws_ecs_cluster.irs.name
+}

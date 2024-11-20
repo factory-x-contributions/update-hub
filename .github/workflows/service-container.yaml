@@ -6,6 +6,7 @@ on:
 env:
   PORT: 8080
   NAME: "irs"
+  ECS_TASK_FAMILY: "irs-service-task"
 
 jobs:
   build:
@@ -121,22 +122,17 @@ jobs:
           cat <<< $(jq '.containerDefinitions[0].healthCheck.command[1] = "curl -f http://localhost:${{ env.PORT }}/swagger/index.html || exit 1"' $FILE ) > $FILE
 
           export TASK_REVISION=$(aws ecs register-task-definition \
-            --family "${{ env.NAME }}-service-task" \
+            --family "${{ env.ECS_TASK_FAMILY }}" \
             --cli-input-json file://$FILE \
             --region ${{ vars.AWS_DEFAULT_REGION }} | jq --raw-output '.taskDefinition.revision')
           
           echo "Registered ECS Task Definition = " $TASK_REVISION
+          echo "Updated Task Definition = ${{ env.ECS_TASK_FAMILY }}:" $TASK_REVISION
 
-      - name: Register new Task definition
-        run: |
-          echo "Updated Task Definition = " $ECS_TASK_FAMILY:$TASK_REVISION
-          
-      - name: Register new Task definition
-        run: |
           UPDATE_ECS_SERVICE=$(aws ecs update-service \
-            --cluster $ECS_CLUSTER_NAME \
-            --service $ECS_SERVICE_NAME \
-            --task-definition $ECS_TASK_FAMILY:$TASK_REVISION \
+            --cluster ${{ steps.terraform-output.outputs.aws_ecs_cluster_name }} \
+            --service ${{ steps.terraform-output.outputs.aws_ecs_service_name }} \
+            --task-definition ${{ env.ECS_TASK_FAMILY }}:$TASK_REVISION \
             --desired-count 1 \
             --region ${{ vars.AWS_DEFAULT_REGION }} | jq --raw-output '.service.serviceName')
 

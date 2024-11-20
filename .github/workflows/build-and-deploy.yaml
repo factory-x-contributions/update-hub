@@ -110,17 +110,17 @@ jobs:
 
       - name: Register new Task definition
         run: |
-          jq --arg "${{ env.NAME }}" .name \
-            --arg "${{ vars.REGISTRY }}/${{ github.repository }}:latest" .image \
-            --arg "${{ steps.terraform-output.outputs.github_pat_secret_arn }}" .repositoryCredentials.credentialsParameter \
-            --arg "${{ steps.terraform-output.outputs.irs_log_group_name }}" .logConfiguration.options.awslogs-group \
-            --arg "${{ vars.AWS_DEFAULT_REGION }}" .logConfiguration.options.awslogs-region \
-            --arg "${{ env.PORT }}" .portMappings[0].containerPort  \
-            --arg "" .environment .tofu/templates/irs.json.tpl
+          FILE="/tofu/templates/irs.json"
+          cat <<< $(jq '.[].name = "${{ env.NAME }}"' $FILE ) > $FILE
+          cat <<< $(jq '.[].image = "${{ vars.REGISTRY }}/${{ github.repository }}:latest"' $FILE ) > $FILE
+          cat <<< $(jq '.[].repositoryCredentials.credentialsParameter = "${{ steps.terraform-output.outputs.github_pat_secret_arn }}"' $FILE ) > $FILE
+          cat <<< $(jq '.[].logConfiguration.options.awslogs-group = "${{ steps.terraform-output.outputs.irs_log_group_name }}"' $FILE ) > $FILE
+          cat <<< $(jq '.[].logConfiguration.options.awslogs-region = "${{ vars.AWS_DEFAULT_REGION }}"' $FILE ) > $FILE
+          cat <<< $(jq '.[].portMappings[0].containerPort = "${{ env.PORT }}"' $FILE ) > $FILE
 
           export TASK_REVISION=$(aws ecs register-task-definition \
             --family "${{ github.repository }}-service-task" \
-            --cli-input-json file://tofu/templates/irs.json.tpl \
+            --cli-input-json file://.tofu/templates/irs.json \
             --region ${{ vars.AWS_DEFAULT_REGION }} | jq --raw-output '.taskDefinition.revision')
           
           echo "Registered ECS Task Definition = " $TASK_REVISION

@@ -37,10 +37,6 @@ jobs:
             region=${{ vars.AWS_DEFAULT_REGION }}
             key=${{ github.repository }}-tfstate
           variables: |
-            name = "irs"
-            port = 8080
-            image = "${{ vars.REGISTRY }}/${{ github.repository }}:latest"
-            service_name = "${{ github.repository }}-service-task"
             repository = "${{ github.repository }}"
             domain_name = "cdm-dev.xo.siemens.cloud"
             github_pat_token = "${{ secrets.PAT_AWSREADREGISTRY }}"

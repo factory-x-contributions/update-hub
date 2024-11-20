@@ -24,7 +24,7 @@ resource "aws_security_group" "ecs_tasks" {
 }
 
 data "template_file" "irs_container_definition" {
-  template = file("./templates/irs.json.tpl")
+  template = "${replace(file("./templates/irs.json"), "\"$${port}\"", "$${port}")}"
 
   vars = {
     name                  = var.name

@@ -122,7 +122,7 @@ jobs:
 
           export TASK_REVISION=$(aws ecs register-task-definition \
             --family "${{ github.repository }}-service-task" \
-            --cli-input-json file://.tofu/templates/irs.json \
+            --cli-input-json file://$FILE \
             --region ${{ vars.AWS_DEFAULT_REGION }} | jq --raw-output '.taskDefinition.revision')
           
           echo "Registered ECS Task Definition = " $TASK_REVISION

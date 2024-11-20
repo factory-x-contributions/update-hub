@@ -121,7 +121,7 @@ jobs:
           cat <<< $(jq '.containerDefinitions[0].healthCheck.command[1] = "curl -f http://localhost:${{ env.PORT }}/swagger/index.html || exit 1"' $FILE ) > $FILE
 
           export TASK_REVISION=$(aws ecs register-task-definition \
-            --family "${{ github.repository }}-service-task" \
+            --family "${{ env.NAME }}-service-task" \
             --cli-input-json file://$FILE \
             --region ${{ vars.AWS_DEFAULT_REGION }} | jq --raw-output '.taskDefinition.revision')
           

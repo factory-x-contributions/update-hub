@@ -126,14 +126,15 @@ jobs:
             --cli-input-json file://$FILE \
             --region ${{ vars.AWS_DEFAULT_REGION }} | jq --raw-output '.taskDefinition.revision')
           
-          echo "Registered ECS Task Definition = " $TASK_REVISION
-          echo "Updated Task Definition = ${{ env.ECS_TASK_FAMILY }}:" $TASK_REVISION
+          echo "Registered ECS Task Definition = "$TASK_REVISION
+          echo "Updated Task Definition = ${{ env.ECS_TASK_FAMILY }}:"$TASK_REVISION
 
           UPDATE_ECS_SERVICE=$(aws ecs update-service \
             --cluster ${{ steps.terraform-output.outputs.aws_ecs_cluster_name }} \
             --service ${{ steps.terraform-output.outputs.aws_ecs_service_name }} \
             --task-definition ${{ env.ECS_TASK_FAMILY }}:$TASK_REVISION \
             --desired-count 1 \
-            --region ${{ vars.AWS_DEFAULT_REGION }} | jq --raw-output '.service.serviceName')
+            --region ${{ vars.AWS_DEFAULT_REGION }} \
+            --force-new-deployment | jq --raw-output '.service.serviceName')
 
           echo "Deployment of $UPDATE_ECS_SERVICE has been completed"

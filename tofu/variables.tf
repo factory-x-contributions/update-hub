@@ -14,33 +14,6 @@ variable "github_pat_token" {
   sensitive = true
 }
 
-
-//---------------------------------------------------------------------
-
-variable "service_name" {
-  type    = string
-}
-
-variable "image" {
-  description = "Image URI"
-  type        = string
-}
-
-variable "name" {
-  type    = string
-  default = "irs"
-}
-
-variable "port" {
-  type    = number
-  default = 8080
-}
-
-variable "environment" {
-  type    = string
-  default = ""
-}
-
 //-----------------------------------------------------------------------
 
 variable "vpc_id" {

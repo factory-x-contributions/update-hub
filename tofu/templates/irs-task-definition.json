@@ -1,0 +1,42 @@
+{
+  "family": "irs-service-task",
+  "executionRoleArn": "${ecs_task_execution_role_arn}",
+  "cpu": "256",
+  "memory": "512",
+  "networkMode": "awsvpc",
+  "containerDefinitions": [
+    {
+      "name": "irs",
+      "image": "ghcr.io/industrial-asset-hub/irs:latest",
+      "repositoryCredentials": {
+        "credentialsParameter": "${repositoryCredentials}"
+      },
+      "cpu": 256,
+      "memory": 512,
+      "networkMode": "awsvpc",
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "${log_group}",
+          "awslogs-region": "${aws_region}",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "portMappings": [
+        {
+          "containerPort": 8080
+        }
+      ],
+      "healthCheck": {
+        "retries": 10,
+        "command": [ "CMD-SHELL", "curl -f http://localhost:8080/swagger/index.html || exit 1" ],
+        "timeout": 5,
+        "interval": 10,
+        "startPeriod": 10
+      }
+    }
+  ],
+  "requiresCompatibilities": [
+      "FARGATE"
+  ]
+}

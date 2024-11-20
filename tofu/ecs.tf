@@ -10,8 +10,8 @@ resource "aws_security_group" "ecs_tasks" {
 
     ingress {
         protocol        = "tcp"
-        from_port       = var.port
-        to_port         = var.port
+        from_port       = local.port
+        to_port         = local.port
         security_groups = [aws_security_group.lb.id]
     }
 
@@ -23,13 +23,21 @@ resource "aws_security_group" "ecs_tasks" {
     }
 }
 
+locals {
+  container_definitions    = jsondecode(file("./templates/irs-task-definition.json")).containerDefinitions
+  family                   = jsondecode(file("./templates/irs-task-definition.json")).family
+  network_mode             = jsondecode(file("./templates/irs-task-definition.json")).networkMode
+  requires_compatibilities = jsondecode(file("./templates/irs-task-definition.json")).requiresCompatibilities
+  cpu                      = jsondecode(file("./templates/irs-task-definition.json")).cpu
+  memory                   = jsondecode(file("./templates/irs-task-definition.json")).memory
+  port                     = jsondecode(file("./templates/irs-task-definition.json")).containerDefinitions[0].portMappings[0].containerPort
+  name                     = jsondecode(file("./templates/irs-task-definition.json")).containerDefinitions[0].name
+}
+
 data "template_file" "irs_container_definition" {
-  template = "${replace(file("./templates/irs.json"), "\"$${port}\"", "$${port}")}"
+  template = "${jsonencode(jsondecode(file("./templates/irs-task-definition.json")).containerDefinitions)}"
 
   vars = {
-    name                  = var.name
-    image                 = var.image
-    port                  = var.port
     repositoryCredentials = aws_secretsmanager_secret.github-pat-secret.arn
     aws_region            = data.aws_region.current.name
     log_group             = aws_cloudwatch_log_group.irs_log_group.name
@@ -38,11 +46,11 @@ data "template_file" "irs_container_definition" {
 
 # ECS Task Definition with Container Definition
 resource "aws_ecs_task_definition" "irs_container_task" {
-  family                   = var.service_name
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"     # 0.25 vCPU
-  memory                   = "512"     # 512 MiB
+  family                   = local.family
+  network_mode             = local.network_mode
+  requires_compatibilities = local.requires_compatibilities
+  cpu                      = local.cpu
+  memory                   = local.memory
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
   container_definitions    = data.template_file.irs_container_definition.rendered
@@ -63,8 +71,8 @@ resource "aws_ecs_service" "irs" {
 
   load_balancer {
     target_group_arn = aws_alb_target_group.irs.id
-    container_name   = var.name
-    container_port   = var.port
+    container_name   = local.name
+    container_port   = local.port
   }
 
   lifecycle {

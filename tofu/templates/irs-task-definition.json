@@ -13,7 +13,6 @@
       },
       "cpu": 256,
       "memory": 512,
-      "networkMode": "awsvpc",
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {

@@ -36,7 +36,7 @@ jobs:
       packages: write
       contents: read
     outputs:
-      digist: ${{ steps.build-push-action.outputs.digest }}
+      digist: ${{ steps.build-push-action.outputs.digist }}
 
     steps:
       - name: Check out the repo

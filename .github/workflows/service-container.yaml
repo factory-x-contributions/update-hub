@@ -113,6 +113,7 @@ jobs:
       - name: Register new Task definition
         run: |
           FILE="./tofu/templates/irs-task-definition.json"
+          cat <<< $(jq '.executionRoleArn = "${{ steps.terraform-output.outputs.ecs_task_execution_role_arn }}"' $FILE ) > $FILE
           cat <<< $(jq '.containerDefinitions[0].name = "${{ env.NAME }}"' $FILE ) > $FILE
           cat <<< $(jq '.containerDefinitions[0].image = "${{ vars.REGISTRY }}/${{ github.repository }}:${{ needs.build-container.outputs.digest }}"' $FILE ) > $FILE
           cat <<< $(jq '.containerDefinitions[0].repositoryCredentials.credentialsParameter = "${{ steps.terraform-output.outputs.github_pat_secret_arn }}"' $FILE ) > $FILE

@@ -14,24 +14,6 @@ variable "github_pat_token" {
   sensitive = true
 }
 
-
-//---------------------------------------------------------------------
-
-variable "image" {
-  description = "Image URI"
-  type        = string
-}
-
-variable "container_port" {
-  type    = number
-  default = 8080
-}
-
-variable "container_environment" {
-  type    = list(map(string))
-  default = [{}]
-}
-
 //-----------------------------------------------------------------------
 
 variable "vpc_id" {

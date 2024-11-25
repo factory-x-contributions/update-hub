@@ -6,14 +6,14 @@ resource "aws_alb" "irs" {
 
 resource "aws_alb_target_group" "irs" {
   name        = "irs-target-group"
-  port        = var.container_port
+  port        = local.port
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
   target_type = "ip"
 
   health_check {
       path    = "/swagger/index.html"
-      port    = var.container_port
+      port    = local.port
   }
 }
 

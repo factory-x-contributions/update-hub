@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - tofu/**
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -44,7 +45,7 @@ jobs:
           var_file: ./tofu/global.tfvars
 
       - name: terraform apply
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/main'
         uses: dflook/tofu-apply@v1.44.0
         with:
           path: tofu

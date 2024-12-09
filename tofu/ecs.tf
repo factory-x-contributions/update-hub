@@ -34,16 +34,6 @@ locals {
   name                     = jsondecode(file("./templates/irs-task-definition.json")).containerDefinitions[0].name
 }
 
-data "template_file" "irs_container_definition" {
-  template = "${jsonencode(jsondecode(file("./templates/irs-task-definition.json")).containerDefinitions)}"
-
-  vars = {
-    repositoryCredentials = aws_secretsmanager_secret.github-pat-secret.arn
-    aws_region            = data.aws_region.current.name
-    log_group             = aws_cloudwatch_log_group.irs_log_group.name
-  }
-}
-
 # ECS Task Definition with Container Definition
 resource "aws_ecs_task_definition" "irs_container_task" {
   family                   = local.family
@@ -53,7 +43,14 @@ resource "aws_ecs_task_definition" "irs_container_task" {
   memory                   = local.memory
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
-  container_definitions    = data.template_file.irs_container_definition.rendered
+  container_definitions    = templatefile(
+    "${jsonencode(jsondecode(file("./templates/irs-task-definition.json")).containerDefinitions)}",
+    {
+      repositoryCredentials = aws_secretsmanager_secret.github-pat-secret.arn
+      aws_region            = data.aws_region.current.name
+      log_group             = aws_cloudwatch_log_group.irs_log_group.name
+    }
+  )
 }
 
 resource "aws_ecs_service" "irs" {

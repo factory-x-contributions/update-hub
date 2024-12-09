@@ -1,5 +1,5 @@
 resource "aws_ecs_cluster" "irs" {
-  name = "irs-cluster"
+  name = "fx-irs-cluster"
 }
 
 # Traffic to the ECS cluster should only come from the ALB
@@ -9,17 +9,17 @@ resource "aws_security_group" "ecs_tasks" {
     vpc_id      = var.vpc_id
 
     ingress {
-        protocol        = "tcp"
-        from_port       = local.port
-        to_port         = local.port
-        security_groups = [aws_security_group.lb.id]
+      protocol        = "tcp"
+      from_port       = local.port
+      to_port         = local.port
+      security_groups = [aws_security_group.lb.id]
     }
 
     egress {
-        protocol    = "-1"
-        from_port   = 0
-        to_port     = 0
-        cidr_blocks = ["0.0.0.0/0"]
+      protocol    = "-1"
+      from_port   = 0
+      to_port     = 0
+      cidr_blocks = ["0.0.0.0/0"]
     }
 }
 

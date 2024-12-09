@@ -43,8 +43,8 @@ resource "aws_ecs_task_definition" "irs_container_task" {
   memory                   = local.memory
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
-  container_definitions    = templatefile(
-    "${jsonencode(jsondecode(file("./templates/irs-task-definition.json")).containerDefinitions)}",
+  container_definitions    = templatestring(
+    jsonencode(jsondecode(file("${path.module}/templates/irs-task-definition.json")).containerDefinitions),
     {
       repositoryCredentials = aws_secretsmanager_secret.github-pat-secret.arn
       aws_region            = data.aws_region.current.name

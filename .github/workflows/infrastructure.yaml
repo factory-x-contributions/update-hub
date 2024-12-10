@@ -47,12 +47,10 @@ jobs:
           backend_config: |
             bucket=state-bucket-${{ vars.AWS_ACCOUNT_ID }}
             region=${{ vars.AWS_DEFAULT_REGION }}
-            key=${{ github.repository }}-tfstate
+            key=${{ github.repository }}.tfstate
           variables: |
             repository = "${{ github.repository }}"
             domain_name = "cdm-dev.xo.siemens.cloud"
-            github_pat_token = "${{ secrets.PAT_AWSREADREGISTRY }}"
-            github_pat_username = "florian.gerdes@siemens.com"
           var_file: ./tofu/global.tfvars
 
       - name: terraform apply

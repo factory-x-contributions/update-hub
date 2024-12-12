@@ -1,5 +1,6 @@
 # IAM Role for ECS Task
 resource "aws_iam_role" "ecs_task_execution_role" {
+  path = "/application_role/"
   name = "ecs_task_execution_role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -31,7 +32,7 @@ resource "aws_iam_policy" "secrets_access_policy" {
         Action = [
           "secretsmanager:GetSecretValue"
         ],
-        Resource = aws_secretsmanager_secret.github-pat-secret.arn
+        Resource = data.terraform_remote_state.scaffold-infra.outputs.github_pat_secret_arn
       }
     ]
   })

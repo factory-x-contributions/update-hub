@@ -3,17 +3,6 @@ variable "domain_name" {
   default = "cdm-dev.xo.siemens.cloud"
 }
 
-//---------------------------------------------------------------------
-
-variable "github_pat_username" {
-  type = string
-}
-
-variable "github_pat_token" {
-  type      = string
-  sensitive = true
-}
-
 //-----------------------------------------------------------------------
 
 variable "vpc_id" {

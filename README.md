@@ -28,7 +28,7 @@ C4Context
 $ cd UpdateWHub/ dotnet run
 ```
 
-## Process view 
+## Process view
 
 ![Deployment view](./docs/material/workflow.drawio.png)
 
@@ -52,4 +52,14 @@ With every commit, regardless of branch, a new image is being build, stored and 
  ### Update of the infrastructure:
  The infrastructure tofu state file is stored in S3. OIDC allows the Github actions to modify the AWS resources.<br>
   * A tofu plan step is being executed with every change in the tofu folder
-  * tofu apply is only being executed on main 
+  * tofu apply is only being executed on main
+
+### Environment variables
+
+The service requires the following environment variables to be set:
+
+| Variable          | Description                                            |
+|-------------------|--------------------------------------------------------|
+| SICK_CLIENTID     | Sick Client ID                                         |
+| SICK_CLIENTSECRET | Sick Client Secret                                     |
+| FESTO_BEARER      | Festo API Key                                          |

@@ -21,7 +21,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '9.0.x'
       - name: Install dependencies
         run: dotnet restore
       - name: Build
@@ -126,7 +126,7 @@ jobs:
             --family "${{ env.ECS_TASK_FAMILY }}" \
             --cli-input-json file://$FILE \
             --region ${{ vars.AWS_DEFAULT_REGION }} | jq --raw-output '.taskDefinition.revision')
-          
+
           echo "Registered ECS Task Definition = "$TASK_REVISION
           echo "Updated Task Definition = ${{ env.ECS_TASK_FAMILY }}:"$TASK_REVISION
 

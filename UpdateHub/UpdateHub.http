@@ -1,6 +1,8 @@
 @UpdateHub_HostAddress = http://localhost:5292
 
-GET {{UpdateHub_HostAddress}}/update/test
+GET {{UpdateHub_HostAddress}}/update/https://pid.sick.com/test
 Accept: application/json
 
 ###
+GET {{UpdateHub_HostAddress}}/update1/test
+Accept: application/json

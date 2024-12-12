@@ -17,14 +17,17 @@ GIT_HASH_FILE="./gitHash.cs"
 
 # Create the GitHash.cs file with the Git hash
 cat << EOF > $GIT_HASH_FILE
-namespace UpdateHub
+namespace UpdateHub;
 
+public static class GitHash
 {
-  public static class GitHash
-  {
-    public const string Value = "$GIT_HASH";
-  }
+  public const string Value = "$GIT_HASH";
+
+  public const UInt16 major = 0;
+  public const UInt16 minor = 0;
+  public const UInt16 patch = 0;
 }
+
 
 EOF
 

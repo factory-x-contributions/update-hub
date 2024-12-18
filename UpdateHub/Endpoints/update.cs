@@ -25,7 +25,7 @@ using System.Text.Json;
 
 public static class UpdateEndpointsExt
 {
-  internal record UpdateInformation(List<string> ProductChangeNotifications, List<string> SoftwareNamePlates)
+  internal record UpdateInformation(List<JsonNode> ProductChangeNotifications, List<JsonNode> SoftwareNamePlates)
   {
   }
 
@@ -115,8 +115,8 @@ public static class UpdateEndpointsExt
             return Results.Problem("Error while fetching Shell Descriptors from AAS server",
               statusCode: StatusCodes.Status500InternalServerError);
 
-          List<string> receivedPcns = new();
-          List<string> receivedSoftwareNameplates = new();
+          List<JsonNode> receivedPcns = new();
+          List<JsonNode> receivedSoftwareNameplates = new();
           foreach (var d in response.Content.SubmodelDescriptors)
           {
             if (d.idShort == "ProductChangeNotifications")

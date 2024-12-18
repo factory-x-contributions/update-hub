@@ -2,6 +2,7 @@ namespace UpdateHub.Domain;
 
 using Refit;
 using System.Collections.Generic;
+using System.Text.Json.Nodes;
 using UpdateHub;
 
 public interface IAasApi
@@ -32,9 +33,9 @@ public interface IAasApi
 
   [Get("/shells/{id}")]
   [Headers("Content-Type: application/json")]
-  Task<string> GetShell(string id);
+  Task<ApiResponse<JsonNode>> GetShell(string id);
 
   [Get("/shells/{id}/submodels/{modelId}")]
   [Headers("Content-Type: application/json")]
-  Task<ApiResponse<String>> GetSubmodelsFromShell(string id, string modelId);
+  Task<ApiResponse<JsonNode>> GetSubmodelsFromShell(string id, string modelId);
 }

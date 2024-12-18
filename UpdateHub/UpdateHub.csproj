@@ -20,6 +20,7 @@
         <PackageReference Include="SerilogTracing.Expressions" Version="2.3.0" />
         <PackageReference Include="SerilogTracing.Instrumentation.AspNetCore" Version="2.3.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+        <PackageReference Include="YamlDotNet" Version="16.2.1" />
     </ItemGroup>
 
     <ItemGroup>

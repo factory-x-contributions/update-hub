@@ -60,7 +60,7 @@ public static class UpdateEndpointsExt
         (
           HttpRequest request,
           string IdLink,
-          IHttpClientFactory httpClientFactory, AasServerService aasServerService
+          IHttpClientFactory httpClientFactory, AasServerRepository aasServerRepository
         ) =>
         {
           // Is a feature flag set?
@@ -72,7 +72,7 @@ public static class UpdateEndpointsExt
           */
 
           var encodedIdLink = Uri.UnescapeDataString(IdLink);
-          var aasServer = aasServerService.GetAasRepository().GetByIdLink(encodedIdLink);
+          var aasServer = aasServerRepository.GetByIdLink(encodedIdLink);
           if (aasServer == null)
             return Results.Problem("No AAS Server for given IDLink found", statusCode: StatusCodes.Status404NotFound);
           //var httpClient = httpClientFactory.CreateClient(aasServer.Name);

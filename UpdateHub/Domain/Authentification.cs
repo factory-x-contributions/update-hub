@@ -52,17 +52,17 @@ public class Oauth2CredentialsFlow : IAuth
 {
   public string ClientId { get; set; }
   public string ClientSecret { get; set; }
-  public string TokenEndpoint { get; set; }
+  public string TokenUrl { get; set; }
 
   public bool Authenticate(HttpClient httpClient )
   {
-    if (string.IsNullOrEmpty(ClientId) || string.IsNullOrEmpty(ClientSecret) || string.IsNullOrEmpty(TokenEndpoint))
+    if (string.IsNullOrEmpty(ClientId) || string.IsNullOrEmpty(ClientSecret) || string.IsNullOrEmpty(TokenUrl))
     {
       return false;
     }
 
     HttpClient tokenHttpClient = new HttpClient();
-    tokenHttpClient.BaseAddress = new Uri(TokenEndpoint);
+    tokenHttpClient.BaseAddress = new Uri(TokenUrl);
     var _restApiService = RestService.For<IOauth2Token>(tokenHttpClient);
     var token = _restApiService.GetAccessToken(new TokenEndpointRequest
     {
@@ -82,26 +82,24 @@ public class Oauth2CredentialsFlow : IAuth
   }
 }
 
-public class ApiKey : IAuth
+public class ApiKeyAuth : IAuth
 {
-  public string EnvironmentKey { get; set; }
+  public string ApiKey { get; set; }
 
   public bool Authenticate(HttpClient httpclient)
   {
-    var apiKey = Environment.GetEnvironmentVariable(EnvironmentKey);
-    httpclient.DefaultRequestHeaders.Add("Authorization", string.Format("{0}", apiKey));
+    httpclient.DefaultRequestHeaders.Add("Authorization", ApiKey);
     return true;
   }
 }
 
-public class BearerToken : IAuth
+public class BearerTokenAuth : IAuth
 {
-  public string EnvironmentKey { get; set; }
+  public string BearerToken { get; set; }
 
   public bool Authenticate(HttpClient httpclient)
   {
-    var bearerToken = Environment.GetEnvironmentVariable(EnvironmentKey);
-    httpclient.DefaultRequestHeaders.Add("Authorization", string.Format("Bearer {0}", bearerToken));
+    httpclient.DefaultRequestHeaders.Add("Authorization", BearerToken);
     return true;
   }
 }

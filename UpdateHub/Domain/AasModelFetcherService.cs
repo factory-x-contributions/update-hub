@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 using Refit;
 using UpdateHub.Configuration;
 using UpdateHub.Helper;
@@ -15,13 +13,13 @@ public static class ServiceCollectionExtensions
 }
 
 
-public class AasModelFetcherService(IHttpClientFactory httpClientFactory, AasServerService aasServerService)
+public class AasModelFetcherService(IHttpClientFactory httpClientFactory, AasServerRepository aasServerRepository)
 {
   //public async Task<string> GetPcns(string idLink)
   public async Task<string> GetPcns(string idLink){
 
     var encodedIdLink = Uri.UnescapeDataString(idLink);
-    var aasServer = aasServerService.GetAasRepository().GetByIdLink(encodedIdLink);
+    var aasServer = aasServerRepository.GetByIdLink(encodedIdLink);
     if (aasServer == null)
     {
       throw new Exception("No AAS Server for given IDLink found");

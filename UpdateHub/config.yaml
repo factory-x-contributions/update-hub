@@ -1,0 +1,24 @@
+aas-servers:
+- name: SampleAasServerOAuth2
+  id-link-prefix: https://sample-company-1.com/
+  url: https://sample-company-1.com/aas
+  auth:
+    auth-type: oauth2
+    client-id: your-client-id
+    client-secret: your-client-secret
+    token-url: https://sample-company-1.com/auth/realms/realm1/protocol/openid-connect/token
+
+- name: SampleAasServerApiKey
+  id-link-prefix: https://sample-company-2.com/
+  url: https://sample-company-1.com/products/aas
+  auth:
+    auth-type: apikey
+    api-key: your-api-key
+
+- name: SampleAasServerBearerToken
+  id-link-prefix: https://sample-company-2.com/
+  url: https://sample-company-1.com/products/aas
+  auth:
+    auth-type: bearertoken
+    bearer-token: your-bearer-token
+

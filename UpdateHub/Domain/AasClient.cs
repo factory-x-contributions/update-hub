@@ -2,6 +2,8 @@ namespace UpdateHub.Domain;
 
 using Refit;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using UpdateHub;
 
 public interface IAasApi
@@ -29,6 +31,10 @@ public interface IAasApi
   [Get("/shell-descriptors/{id}")]
   [Headers("Content-Type: application/json")]
   Task<ApiResponse<ShellDesciptors>> GetShellDescriptors(string id);
+
+  [Get("/shells")]
+  [Headers("Content-Type: application/json")]
+  Task<ApiResponse<JsonNode>> GetShells();
 
   [Get("/shells/{id}")]
   [Headers("Content-Type: application/json")]

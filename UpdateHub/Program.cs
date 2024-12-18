@@ -106,8 +106,10 @@ foreach (var aasServerConfig in applicationConfig.aasServers)
 builder.Services.AddSingleton(aasServerRepository);
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddControllers();
 builder.Services.AddSwaggerGen(c =>
 {
+  c.EnableAnnotations();
   c.SwaggerDoc("v1", new OpenApiInfo
   {
     Title = "UpdateHub", Version = "v1",
@@ -130,5 +132,8 @@ app.UseSwaggerUI();
 
 app.VersionEndpoint();
 app.Idlink();
+
+app.UseRouting();
+app.MapControllers();
 
 app.Run();

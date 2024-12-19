@@ -53,10 +53,13 @@ public static class UpdateEndpointsExt
           //var httpClient = httpClientFactory.CreateClient(aasServer.Name);
           var httpClient = httpClientFactory.CreateClient();
 
+
+          // TODO: use proper caching, instead of doing it for every curl.
+          // May, https://github.com/TurnerSoftware/CacheTower is an option
           if (aasServer.Auth != null)
           {
             if (!aasServer.Auth.Authenticate(httpClient))
-              return Results.Problem("Error while executing authentifcation", statusCode: StatusCodes.Status401Unauthorized);
+              return Results.Problem("Error while executing authentication", statusCode: StatusCodes.Status401Unauthorized);
           }
           httpClient.BaseAddress = new Uri(aasServer.Url);
           var _restApiService = RestService.For<IAasApi>(httpClient);
@@ -76,10 +79,13 @@ public static class UpdateEndpointsExt
 
           if (!shellIds.IsSuccessful)
             return Results.Problem("Error while fetching IdLink from AAS server",
-              statusCode: StatusCodes.Status500InternalServerError);
-          if (shellIds.Content.Count != 1)
-            return Results.Problem("No or multiple shells found for given IdLink",
+              statusCode: StatusCodes.Status422UnprocessableEntity);
+          if (shellIds.Content.Count == 0 )
+            return Results.Problem("No shells found for given IdLink",
               statusCode: StatusCodes.Status404NotFound);
+          if (shellIds.Content.Count != 1 )
+            return Results.Problem("Multiple shells found for given IdLink",
+              statusCode: StatusCodes.Status422UnprocessableEntity);
 
           //
           // Shell Descriptors
@@ -127,6 +133,8 @@ public static class UpdateEndpointsExt
       .WithTags("SoftwareUpdate")
       .Produces<UpdateInformation[]>(StatusCodes.Status200OK)
       .ProducesProblem(StatusCodes.Status400BadRequest)
+      .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
+      .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status405MethodNotAllowed)
       .WithOpenApi();
   }

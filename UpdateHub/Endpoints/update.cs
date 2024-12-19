@@ -29,33 +29,8 @@ public static class UpdateEndpointsExt
   {
   }
 
-/*
-  public static async Task<Results<Ok<String>, ProblemHttpResult>> Idlink1(
-    string idLink,
-    AasModelFetcherService aasModelFetcherService)
-  {
-
-      var result = await aasModelFetcherService.GetPcns(idLink);
-
-
-    return TypedResults.Problem("Error Test",  statusCode: StatusCodes.Status405MethodNotAllowed);
-  }
-*/
   public static void Idlink(this WebApplication app)
   {
-    /*
-    app.MapGet("/update1/{idLink}", Idlink1)
-    .WithName("update1")
-      .WithDescription("No implemented, yet.\nReturns only HTTP status code 405")
-      .WithSummary("Resolves a IdLink to PCNs")
-      .WithTags("PCN")
-      .Produces<string>(StatusCodes.Status200OK)
-      .ProducesProblem(StatusCodes.Status404NotFound)
-      .ProducesProblem(StatusCodes.Status400BadRequest)
-      .ProducesProblem(StatusCodes.Status405MethodNotAllowed)
-      .WithOpenApi();
-*/
-
     app.MapGet("/update/{IdLink}",
         (
           HttpRequest request,

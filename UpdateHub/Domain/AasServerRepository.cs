@@ -3,7 +3,6 @@ namespace UpdateHub.Domain;
 // Interface
 public interface IAasServerRepository
 {
-  //public AasServer GetById(Guid id);
   public void AddAasServer(AasServer aasServer);
   public List<AasServer> GetAll();
   public AasServer GetByIdLink(string idLink);

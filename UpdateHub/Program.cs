@@ -122,8 +122,6 @@ builder.Services.AddHttpClient(string.Empty).ConfigureHttpClient(c => {
   c.Timeout = TimeSpan.FromSeconds(10);
 });
 
-builder.Services.AddAasModelFetcherService(); // TODO: Remove with update/idlink1
-
 var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();

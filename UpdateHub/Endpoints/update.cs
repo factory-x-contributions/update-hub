@@ -1,27 +1,11 @@
-using System.Buffers.Text;
 using System.Net;
-using System.Net.Mime;
-using System.Reflection.Metadata;
-using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Formatters;
-using Microsoft.Net.Http.Headers;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Serilog;
 using UpdateHub.Helper;
 
 namespace UpdateHub.Endpoints;
 
 using Refit;
-using UpdateHub;
 using Domain;
-using Configuration;
-using Microsoft.AspNetCore.Http.HttpResults;
-using System.Text.Json;
 
 public static class UpdateEndpointsExt
 {
@@ -83,48 +67,49 @@ public static class UpdateEndpointsExt
           if (shellIds.Content.Count == 0 )
             return Results.Problem("No shells found for given IdLink",
               statusCode: StatusCodes.Status404NotFound);
-          if (shellIds.Content.Count != 1 )
-            return Results.Problem("Multiple shells found for given IdLink",
-              statusCode: StatusCodes.Status422UnprocessableEntity);
+
+          Dictionary<string, JsonNode> receivedPcns = new();
+          Dictionary<string, JsonNode> receivedSoftwareNameplates = new();
 
           //
           // Shell Descriptors
           //
-          var assetId = shellIds.Content[0];
-          var response = _restApiService.GetShellDescriptors(Base64UrlOwnImplementation.Encode(assetId)).Result;
-          if (!response.IsSuccessful)
-            return Results.Problem("Error while fetching Shell Descriptors from AAS server",
-              statusCode: StatusCodes.Status500InternalServerError);
 
-          List<JsonNode> receivedPcns = new();
-          List<JsonNode> receivedSoftwareNameplates = new();
-          foreach (var d in response.Content.SubmodelDescriptors)
+          foreach (var shellId in shellIds.Content)
           {
-            if (d.idShort == "ProductChangeNotifications")
+            var response = _restApiService.GetShellDescriptors(Base64UrlOwnImplementation.Encode(shellId)).Result;
+            if (!response.IsSuccessful)
+              return Results.Problem("Error while fetching Shell Descriptors from AAS server",
+                statusCode: StatusCodes.Status500InternalServerError);
+
+
+            foreach (var d in response.Content.SubmodelDescriptors)
             {
-              var pcn = _restApiService.GetSubmodelsFromShell(Base64UrlOwnImplementation.Encode(assetId), Base64UrlOwnImplementation.Encode(d.id))
-                .Result;
-              if (!pcn.IsSuccessful)
-                return Results.Problem("Error while fetching PCN from AAS server",
-                  statusCode: StatusCodes.Status500InternalServerError);
+              if (d.idShort == "ProductChangeNotifications")
+              {
+                var pcn = _restApiService.GetSubmodelsFromShell(Base64UrlOwnImplementation.Encode(shellId), Base64UrlOwnImplementation.Encode(d.id))
+                  .Result;
+                if (!pcn.IsSuccessful)
+                  return Results.Problem("Error while fetching PCN from AAS server",
+                    statusCode: StatusCodes.Status500InternalServerError);
 
-              receivedPcns.Add(pcn.Content);
-            }
+                receivedPcns[pcn.Content["id"].AsValue().ToString()] = pcn.Content;
+              }
 
-            if (d.idShort == "SoftwareNameplate")
-            {
-              var nameplate = _restApiService
-                .GetSubmodelsFromShell(Base64UrlOwnImplementation.Encode(assetId), Base64UrlOwnImplementation.Encode(d.id)).Result;
-              if (!nameplate.IsSuccessful)
-                return Results.Problem("Error while fetching Software Nameplate from AAS server",
-                  statusCode: StatusCodes.Status500InternalServerError);
+              if (d.idShort == "SoftwareNameplate")
+              {
+                var nameplate = _restApiService
+                  .GetSubmodelsFromShell(Base64UrlOwnImplementation.Encode(shellId), Base64UrlOwnImplementation.Encode(d.id)).Result;
+                if (!nameplate.IsSuccessful)
+                  return Results.Problem("Error while fetching Software Nameplate from AAS server",
+                    statusCode: StatusCodes.Status500InternalServerError);
 
-              receivedSoftwareNameplates.Add(nameplate.Content);
+                receivedSoftwareNameplates[nameplate.Content["id"].AsValue().ToString()] = nameplate.Content;
+              }
             }
           }
 
-
-          var productChangeNofication = new UpdateInformation(receivedPcns, receivedSoftwareNameplates);
+          var productChangeNofication = new UpdateInformation(receivedPcns.Values.ToList(), receivedSoftwareNameplates.Values.ToList());
           return Results.Json(productChangeNofication);
         })
       .WithName("update")

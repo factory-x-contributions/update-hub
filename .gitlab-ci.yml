@@ -76,7 +76,7 @@ dev:update-hub:destroy:
 
 deploy:
   stage: deploy
-  image: cr.siemens.com/common-device-management/utils/templates/cicd-images/opentofu@sha256:827d9d401ce379dbedb48b02279f4e985af5bcede892c484e4f748d5eb9a4cfa
+  image: cr.siemens.com/common-device-management/utils/templates/cicd-images/opentofu@sha256:03fd8e2f1b5564f6652c5809fe2948343882a4d638c33cd730d36d82733467b7
   variables:
     TF_HTTP_USERNAME: "gitlab-ci-token"
     TF_HTTP_PASSWORD: ${CI_JOB_TOKEN}

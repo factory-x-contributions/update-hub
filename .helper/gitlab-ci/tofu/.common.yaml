@@ -80,6 +80,7 @@
     AWS_REGION: eu-central-1
     DESTROY_RESOURCE: "false"
     TF_VARFILE: "dev.tfvars"
+    GITLAB_TF_ADDRESS: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${COMPONENT_NAME}"
   before_script:
     - *set_git_https_credentials
     - *get_aws_credentials

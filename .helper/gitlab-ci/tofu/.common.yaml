@@ -58,7 +58,7 @@
 
 .templateAWS:
   image:
-    name: cr.siemens.com/common-device-management/utils/templates/cicd-images/opentofu@sha256:c03fd8e2
+    name: cr.siemens.com/common-device-management/utils/templates/cicd-images/opentofu@sha256:827d9d401ce379dbedb48b02279f4e985af5bcede892c484e4f748d5eb9a4cfa
     entrypoint: [""]
   id_tokens:
     AWS_DEPLOY_TOKEN:

@@ -1,5 +1,5 @@
 output "github_pat_secret_arn" {
-  value = data.terraform_remote_state.scaffold-infra.outputs.github_pat_secret_arn
+  value = aws_secretsmanager_secret.github-pat-secret.arn
 }
 
 output "irs_log_group_name" {

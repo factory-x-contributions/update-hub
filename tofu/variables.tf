@@ -1,3 +1,14 @@
+variable "github_pat_username" {
+  type = string
+}
+
+variable "github_pat_token" {
+  type      = string
+  sensitive = true
+}
+
+//---------------------------------------------------------------------
+
 variable "domain_name" {
   type    = string
   default = "cdm-dev.xo.siemens.cloud"

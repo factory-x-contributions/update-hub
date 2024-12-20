@@ -32,7 +32,7 @@ resource "aws_iam_policy" "secrets_access_policy" {
         Action = [
           "secretsmanager:GetSecretValue"
         ],
-        Resource = data.terraform_remote_state.scaffold-infra.outputs.github_pat_secret_arn
+        Resource = aws_secretsmanager_secret.github-pat-secret.arn
       }
     ]
   })

@@ -46,7 +46,7 @@ resource "aws_ecs_task_definition" "irs_container_task" {
   container_definitions    = templatestring(
     jsonencode(jsondecode(file("${path.module}/templates/irs-task-definition.json")).containerDefinitions),
     {
-      repositoryCredentials = data.terraform_remote_state.scaffold-infra.outputs.github_pat_secret_arn
+      repositoryCredentials = aws_secretsmanager_secret.github-pat-secret.arn
       aws_region            = data.aws_region.current.name
       log_group             = aws_cloudwatch_log_group.irs_log_group.name
     }

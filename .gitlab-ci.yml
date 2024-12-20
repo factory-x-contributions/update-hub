@@ -79,7 +79,7 @@ deploy:
   stage: deploy
   extends: .common-tofu
   variables:
-    FILE: "./tofu/templates/irs-task-definition.json"
+    FILE: "${CI_PROJECT_DIR}/tofu/templates/irs-task-definition.json"
     PORT: 8080
     NAME: "$COMPONENT_NAME"
     ECS_TASK_FAMILY: "irs-service-task"

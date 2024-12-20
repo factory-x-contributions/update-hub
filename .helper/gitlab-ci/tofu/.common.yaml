@@ -1,0 +1,91 @@
+###########################################################################################################################################
+### common tofu templates
+###########################################################################################################################################
+
+.get_aws_credentials: &get_aws_credentials
+  - >
+    export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+      $(aws sts assume-role-with-web-identity \
+        --duration-seconds 3600 \
+        --role-session-name "cicd" \
+        --role-arn arn:aws:iam::${AWS_ACCOUNT_ID}:role/${TF_VAR_JWT_ROLE_NAME} \
+        --web-identity-token "${AWS_DEPLOY_TOKEN}" \
+        --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+        --output text
+      )
+    )
+  - aws sts get-caller-identity # DEBUGGING
+
+.set_deployment_vars: &set_deployment_vars
+  # set env vars for tofu & environment
+  - DEPLOYMENT_NAME=${CI_COMMIT_REF_SLUG:0:16}
+  - >
+    if [[ $DEPLOYMENT_NAME == *"-" ]]; then
+      export DEPLOYMENT_NAME=${DEPLOYMENT_NAME%-}
+    fi
+  - >
+    if [[ $CI_COMMIT_REF_NAME == "main" ]] || [[ $CI_COMMIT_TAG ]]; then
+      export DEPLOYMENT_NAME="staging"
+    fi
+  - >
+    if [[ $DEPLOY_TO_PROD ]]; then
+      export DEPLOYMENT_NAME="prod"
+    fi
+  - >
+    if [[ $DEPLOYMENT_NAME_OVERRIDE ]]; then
+      export DEPLOYMENT_NAME=${DEPLOYMENT_NAME_OVERRIDE}
+    fi
+  - echo "DEPLOYMENT_NAME=${DEPLOYMENT_NAME}" >> deployment.env && source deployment.env
+  - echo "STATE_FILE_NAME=${DEPLOYMENT_NAME}-${STATE_FILE_NAME_SUFFIX}" >> deployment.env && source deployment.env
+  - echo "GITLAB_TF_ADDRESS=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/${STATE_FILE_NAME}" >> deployment.env && source deployment.env
+  - echo "DOMAIN_NAME=${DEPLOYMENT_NAME}.inventory.cdm-dev.xo.siemens.cloud" >> deployment.env && source deployment.env
+  - >
+    if [[ $DEPLOY_TO_PROD ]]; then
+      echo "DOMAIN_NAME=${DEPLOYMENT_NAME}.inventory.cdm.xo.siemens.cloud" >> deployment.env && source deployment.env
+    fi 
+  - echo "DEPLOYMENT_URL=https://${DOMAIN_NAME}" >> deployment.env && source deployment.env
+  - cat deployment.env # DEBUGGING
+
+.create_ci_tfvars: &create_ci_tfvars
+  - echo "deployment_name = \"$DEPLOYMENT_NAME\"" >> ${CI_PROJECT_DIR}/${TF_FOLDER}/tfvars/ci.tfvars
+  - echo "domain_name = \"$DOMAIN_NAME\"" >> ${CI_PROJECT_DIR}/${TF_FOLDER}/tfvars/ci.tfvars
+  - echo "service_version = \"$IMAGE_TAG\"" >> ${CI_PROJECT_DIR}/${TF_FOLDER}/tfvars/ci.tfvars
+  - cat ${CI_PROJECT_DIR}/${TF_FOLDER}/tfvars/ci.tfvars # DEBUGGING
+
+# sets credentials to access private Terraform modules located in code.siemens.com
+.set_git_https_credentials: &set_git_https_credentials |
+  git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@code.siemens.com/".insteadOf https://code.siemens.com/
+
+.templateAWS:
+  image:
+    name: cr.siemens.com/common-device-management/utils/templates/cicd-images/opentofu@sha256:c03fd8e2
+    entrypoint: [""]
+  id_tokens:
+    AWS_DEPLOY_TOKEN:
+      aud: https://code.siemens.com
+  timeout: 60m
+  before_script:
+    - *get_aws_credentials
+
+.common-tofu:
+  extends: .templateAWS
+  stage: tofu
+  variables:
+    TF_HTTP_USERNAME: "gitlab-ci-token"
+    TF_HTTP_PASSWORD: ${CI_JOB_TOKEN}
+    TF_PLANFILE: "tfplan"
+    TF_OUTPUT_JSON: "tofu-output.json"
+    LOCK_FLAG: "true"
+    TF_FOLDER: tofu
+    AWS_REGION: eu-central-1
+    DESTROY_RESOURCE: "false"
+    TF_VARFILE: "dev.tfvars"
+  before_script:
+    - *set_git_https_credentials
+    - *get_aws_credentials
+
+    - echo "AWS account $AWS_ACCOUNT_ID"
+    - echo "Applying ${TF_FOLDER} with ${TF_VARFILE} into AWS-Region ${AWS_REGION}"
+
+    - cd $TF_FOLDER
+    - tofu init -input=false  -backend-config="address=${GITLAB_TF_ADDRESS}" -backend-config="lock_address=${GITLAB_TF_ADDRESS}/lock" -backend-config="unlock_address=${GITLAB_TF_ADDRESS}/lock" -backend-config="lock_method=POST" -backend-config="unlock_method=DELETE" -backend-config="retry_wait_min=5" --upgrade

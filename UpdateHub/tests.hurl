@@ -12,6 +12,8 @@ in: body
 # https://pid.sick.com/1098146
 GET http://localhost:5292/update/https%3A%2F%2Fpid.sick.com%2F1098146
 HTTP 200
+[Captures]
+in: body
 
 #
 GET http://localhost:5292/update/test

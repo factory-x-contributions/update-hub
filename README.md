@@ -30,7 +30,33 @@ $ cd UpdateWHub/ dotnet run
 
 ## Process view
 
-![Deployment view](./docs/material/workflow.drawio.png)
+```mermaid
+sequenceDiagram
+  participant CDM
+  participant Update Hub
+  participant AAS ShellRegistryAPI
+  participant AAS ShellRepositoryAPI
+
+  CDM->>Update Hub: /update/{dig. Nameplate}
+
+  Update Hub-->>AAS ShellRegistryAPI: /lookup/shells/{IDLink}
+  AAS ShellRegistryAPI-->>Update Hub: aasIdentifier
+  loop "loop over all AAS Identifier"
+    Update Hub-->>AAS ShellRegistryAPI: /shells/descriptors/{aasIdentifier}
+    AAS ShellRegistryAPI-->>Update Hub: submodel descriptors containing SM Ids
+
+    loop "loop over all  Product Change Notification"
+      Update Hub -->>  ShellRepositoryAPI: /shells/{aasIdentifier}/submodels/{submodelIdentifier}
+      ShellRepositoryAPI -->> Update Hub: PCN Submodels
+    end
+
+    loop "loop over all Software Nameplate"
+      Update Hub -->>  ShellRepositoryAPI: /shells/{aasIdentifier}/submodels/{submodelIdentifier}
+      ShellRepositoryAPI -->> Update Hub: Software Nameplate Submodels
+    end
+  end
+  Update Hub -->> CDM: Return PCNs and Software Nameplate
+```
 
 ## Deployment view
 

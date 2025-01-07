@@ -53,7 +53,11 @@ var app = builder.Build();
 app.MapHealthChecks("/healthz");
 
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(c =>
+{
+  c.SwaggerEndpoint("/swagger/v1/swagger.json", "UpdateHub v1");
+  c.RoutePrefix = string.Empty;  // Set Swagger UI at apps root
+});
 
 app.VersionEndpoint();
 app.Idlink();

@@ -30,6 +30,7 @@ Log.Debug(parser.ToString());
 
 // Configure web application
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSerilog();
 builder.Services.AddHealthChecks();
 builder.Services.AddOpenTelemetry().WithMetrics(builder =>
 {

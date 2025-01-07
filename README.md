@@ -30,7 +30,33 @@ $ cd UpdateWHub/ dotnet run
 
 ## Process view
 
-![Deployment view](./docs/material/workflow.drawio.png)
+```mermaid
+sequenceDiagram
+  participant CDM
+  participant Update Hub
+  participant AAS ShellRegistryAPI
+  participant AAS ShellRepositoryAPI
+
+  CDM->>Update Hub: /update/{dig. Nameplate}
+
+  Update Hub-->>AAS ShellRegistryAPI: /lookup/shells/{IDLink}
+  AAS ShellRegistryAPI-->>Update Hub: aasIdentifier
+  loop "loop over all AAS Identifier"
+    Update Hub-->>AAS ShellRegistryAPI: /shells/descriptors/{aasIdentifier}
+    AAS ShellRegistryAPI-->>Update Hub: submodel descriptors containing SM Ids
+
+    loop "loop over all  Product Change Notification"
+      Update Hub -->>  ShellRepositoryAPI: /shells/{aasIdentifier}/submodels/{submodelIdentifier}
+      ShellRepositoryAPI -->> Update Hub: PCN Submodels
+    end
+
+    loop "loop over all Software Nameplate"
+      Update Hub -->>  ShellRepositoryAPI: /shells/{aasIdentifier}/submodels/{submodelIdentifier}
+      ShellRepositoryAPI -->> Update Hub: Software Nameplate Submodels
+    end
+  end
+  Update Hub -->> CDM: Return PCNs and Software Nameplate
+```
 
 ## Deployment view
 
@@ -54,12 +80,35 @@ With every commit, regardless of branch, a new image is being build, stored and 
   * A tofu plan step is being executed with every change in the tofu folder
   * tofu apply is only being executed on main
 
-### Environment variables
+### Configuration file
 
-The service requires the following environment variables to be set:
+The servers configuration is stored inside an YAML file. The location of the file
+can be set using the `CONFIG_FILE_PATH` environment variable.
 
-| Variable          | Description                                            |
-|-------------------|--------------------------------------------------------|
-| SICK_CLIENTID     | Sick Client ID                                         |
-| SICK_CLIENTSECRET | Sick Client Secret                                     |
-| FESTO_BEARER      | Festo API Key                                          |
+The following example shows the configuration for three different AAS servers, with different
+authentication methods.
+```yaml
+aas-servers:
+- name: SampleAasServerOAuth2
+  id-link-prefix: https://sample-company-1.com/
+  url: https://sample-company-1.com/aas
+  auth:
+    auth-type: oauth2
+    client-id: your-client-id
+    client-secret: your-client-secret
+    token-url: https://sample-company-1.com/auth/realms/realm1/protocol/openid-connect/token
+
+- name: SampleAasServerApiKey
+  id-link-prefix: https://sample-company-2.com/
+  url: https://sample-company-1.com/products/aas
+  auth:
+    auth-type: apikey
+    api-key: your-api-key
+
+- name: SampleAasServerBearerToken
+  id-link-prefix: https://sample-company-2.com/
+  url: https://sample-company-1.com/products/aas
+  auth:
+    auth-type: bearertoken
+    bearer-token: your-bearer-token
+```

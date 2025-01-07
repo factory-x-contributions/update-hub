@@ -25,37 +25,12 @@ using System.Text.Json;
 
 public static class UpdateEndpointsExt
 {
-  internal record UpdateInformation(List<string> ProductChangeNotifications, List<string> SoftwareNamePlates)
+  internal record UpdateInformation(List<JsonNode> ProductChangeNotifications, List<JsonNode> SoftwareNamePlates)
   {
   }
 
-/*
-  public static async Task<Results<Ok<String>, ProblemHttpResult>> Idlink1(
-    string idLink,
-    AasModelFetcherService aasModelFetcherService)
+  public static void IdLinkEndpoint(this WebApplication app)
   {
-
-      var result = await aasModelFetcherService.GetPcns(idLink);
-
-
-    return TypedResults.Problem("Error Test",  statusCode: StatusCodes.Status405MethodNotAllowed);
-  }
-*/
-  public static void Idlink(this WebApplication app)
-  {
-    /*
-    app.MapGet("/update1/{idLink}", Idlink1)
-    .WithName("update1")
-      .WithDescription("No implemented, yet.\nReturns only HTTP status code 405")
-      .WithSummary("Resolves a IdLink to PCNs")
-      .WithTags("PCN")
-      .Produces<string>(StatusCodes.Status200OK)
-      .ProducesProblem(StatusCodes.Status404NotFound)
-      .ProducesProblem(StatusCodes.Status400BadRequest)
-      .ProducesProblem(StatusCodes.Status405MethodNotAllowed)
-      .WithOpenApi();
-*/
-
     app.MapGet("/update/{IdLink}",
         (
           HttpRequest request,
@@ -78,13 +53,19 @@ public static class UpdateEndpointsExt
           //var httpClient = httpClientFactory.CreateClient(aasServer.Name);
           var httpClient = httpClientFactory.CreateClient();
 
+
+          // TODO: use proper caching, instead of doing it for every curl.
+          // May, https://github.com/TurnerSoftware/CacheTower is an option
           if (aasServer.Auth != null)
           {
             if (!aasServer.Auth.Authenticate(httpClient))
-              return Results.Problem("Error while executing authentifcation", statusCode: StatusCodes.Status401Unauthorized);
+              return Results.Problem("Error while executing authentication", statusCode: StatusCodes.Status401Unauthorized);
           }
           httpClient.BaseAddress = new Uri(aasServer.Url);
           var _restApiService = RestService.For<IAasApi>(httpClient);
+
+          try
+          {
 
           //
           // Get assetID from IdLink
@@ -101,50 +82,64 @@ public static class UpdateEndpointsExt
 
           if (!shellIds.IsSuccessful)
             return Results.Problem("Error while fetching IdLink from AAS server",
-              statusCode: StatusCodes.Status500InternalServerError);
-          if (shellIds.Content.Count != 1)
-            return Results.Problem("No or multiple shells found for given IdLink",
+              statusCode: StatusCodes.Status422UnprocessableEntity);
+          if (shellIds.Content.Count == 0 )
+            return Results.Problem("No shells found for given IdLink",
               statusCode: StatusCodes.Status404NotFound);
+
+          Dictionary<string, JsonNode> receivedPcns = new();
+          Dictionary<string, JsonNode> receivedSoftwareNameplates = new();
 
           //
           // Shell Descriptors
           //
-          var assetId = shellIds.Content[0];
-          var response = _restApiService.GetShellDescriptors(Base64UrlOwnImplementation.Encode(assetId)).Result;
-          if (!response.IsSuccessful)
-            return Results.Problem("Error while fetching Shell Descriptors from AAS server",
-              statusCode: StatusCodes.Status500InternalServerError);
 
-          List<string> receivedPcns = new();
-          List<string> receivedSoftwareNameplates = new();
-          foreach (var d in response.Content.SubmodelDescriptors)
+          foreach (var shellId in shellIds.Content)
           {
-            if (d.idShort == "ProductChangeNotifications")
+            var response = _restApiService.GetShellDescriptors(Base64UrlOwnImplementation.Encode(shellId)).Result;
+            if (!response.IsSuccessful)
+              return Results.Problem("Error while fetching Shell Descriptors from AAS server",
+                statusCode: StatusCodes.Status500InternalServerError);
+
+
+            foreach (var d in response.Content.SubmodelDescriptors)
             {
-              var pcn = _restApiService.GetSubmodelsFromShell(Base64UrlOwnImplementation.Encode(assetId), Base64UrlOwnImplementation.Encode(d.id))
-                .Result;
-              if (!pcn.IsSuccessful)
-                return Results.Problem("Error while fetching PCN from AAS server",
-                  statusCode: StatusCodes.Status500InternalServerError);
+              if (d.idShort == "ProductChangeNotifications")
+              {
+                var pcn = _restApiService.GetSubmodelsFromShell(Base64UrlOwnImplementation.Encode(shellId), Base64UrlOwnImplementation.Encode(d.id))
+                  .Result;
+                if (!pcn.IsSuccessful)
+                  return Results.Problem("Error while fetching PCN from AAS server",
+                    statusCode: StatusCodes.Status500InternalServerError);
 
-              receivedPcns.Add(pcn.Content);
-            }
+                receivedPcns[pcn.Content["id"].AsValue().ToString()] = pcn.Content;
+              }
 
-            if (d.idShort == "SoftwareNameplate")
-            {
-              var nameplate = _restApiService
-                .GetSubmodelsFromShell(Base64UrlOwnImplementation.Encode(assetId), Base64UrlOwnImplementation.Encode(d.id)).Result;
-              if (!nameplate.IsSuccessful)
-                return Results.Problem("Error while fetching Software Nameplate from AAS server",
-                  statusCode: StatusCodes.Status500InternalServerError);
+              if (d.idShort == "SoftwareNameplate")
+              {
+                var nameplate = _restApiService
+                  .GetSubmodelsFromShell(Base64UrlOwnImplementation.Encode(shellId), Base64UrlOwnImplementation.Encode(d.id)).Result;
+                if (!nameplate.IsSuccessful)
+                  return Results.Problem("Error while fetching Software Nameplate from AAS server",
+                    statusCode: StatusCodes.Status500InternalServerError);
 
-              receivedSoftwareNameplates.Add(nameplate.Content);
+                receivedSoftwareNameplates[nameplate.Content["id"].AsValue().ToString()] = nameplate.Content;
+              }
             }
           }
 
-
-          var productChangeNofication = new UpdateInformation(receivedPcns, receivedSoftwareNameplates);
+          var productChangeNofication = new UpdateInformation(receivedPcns.Values.ToList(), receivedSoftwareNameplates.Values.ToList());
           return Results.Json(productChangeNofication);
+          }
+          catch (System.Net.Sockets.SocketException e)
+          {
+            return Results.Problem("AAS Server could not be reached.");
+          }
+          catch (Exception e)
+          {
+            Console.WriteLine(e);
+            return Results.Problem("Unknown exception", e.ToString());
+          }
         })
       .WithName("update")
       .WithDescription("No fully implemented, yet.\n")
@@ -152,7 +147,9 @@ public static class UpdateEndpointsExt
       .WithTags("SoftwareUpdate")
       .Produces<UpdateInformation[]>(StatusCodes.Status200OK)
       .ProducesProblem(StatusCodes.Status400BadRequest)
-      .ProducesProblem(StatusCodes.Status405MethodNotAllowed)
+      .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
+      .ProducesProblem(StatusCodes.Status404NotFound)
+      .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithOpenApi();
   }
 }

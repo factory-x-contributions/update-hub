@@ -28,3 +28,6 @@ EXPOSE 8080
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "UpdateHub.dll"]
+
+HEALTHCHECK CMD curl --fail http://localhost:5292/healthz || exit
+

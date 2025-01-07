@@ -21,7 +21,7 @@ public class Parser
         {
           { "oauth2", typeof(AuthConfigOAuth2) },
           { "apikey", typeof(AuthConfigApiKey) },
-          { "bearertoken", typeof(AuthConfigBearerToken) }
+          { "bearertoken", typeof(AuthConfigBearerToken) },
         };
         o.AddKeyValueTypeDiscriminator<AuthConfig>("auth-type", valueMappings);
       })
@@ -79,6 +79,9 @@ public class Parser
             BearerToken = bearerToken.BearerToken
           };
           break;
+        case null:
+          aasServer.Auth = null;
+          break;
 
         default:
           throw new InvalidOperationException($"Unsupported auth type: {aasServerConfig.Auth.AuthType}");
@@ -98,7 +101,7 @@ public class Parser
         aasServer.Name,
         aasServer.IdLinkPrefix,
         aasServer.Url,
-        aasServer.Auth.GetType().ToString()
+        aasServer.Auth != null ?  aasServer.Auth.GetType().ToString(): "none"
       );
     }
 

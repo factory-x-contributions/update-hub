@@ -29,6 +29,8 @@ Log.Debug(parser.ToString());
 
 // Configure web application
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddHealthChecks();
+
 builder.Services.AddSingleton(parser.aasServerRepository);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -48,6 +50,8 @@ builder.Services.AddHttpClient(string.Empty).ConfigureHttpClient(c => {
 });
 
 var app = builder.Build();
+app.MapHealthChecks("/healthz");
+
 app.UseSwagger();
 app.UseSwaggerUI();
 

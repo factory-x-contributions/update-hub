@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json.Nodes;
+using Microsoft.AspNetCore.Http.HttpResults;
 using UpdateHub.Helper;
 
 namespace UpdateHub.Endpoints;
@@ -47,6 +48,9 @@ public static class UpdateEndpointsExt
           }
           httpClient.BaseAddress = new Uri(aasServer.Url);
           var _restApiService = RestService.For<IAasApi>(httpClient);
+
+          try
+          {
 
           //
           // Get assetID from IdLink
@@ -111,6 +115,16 @@ public static class UpdateEndpointsExt
 
           var productChangeNofication = new UpdateInformation(receivedPcns.Values.ToList(), receivedSoftwareNameplates.Values.ToList());
           return Results.Json(productChangeNofication);
+          }
+          catch (System.Net.Sockets.SocketException e)
+          {
+            return Results.Problem("AAS Server could not be reached.");
+          }
+          catch (Exception e)
+          {
+            Console.WriteLine(e);
+            return Results.Problem("Unknown exception", e.ToString());
+          }
         })
       .WithName("update")
       .WithDescription("No fully implemented, yet.\n")
@@ -120,7 +134,7 @@ public static class UpdateEndpointsExt
       .ProducesProblem(StatusCodes.Status400BadRequest)
       .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
       .ProducesProblem(StatusCodes.Status404NotFound)
-      .ProducesProblem(StatusCodes.Status405MethodNotAllowed)
+      .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithOpenApi();
   }
 }

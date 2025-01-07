@@ -77,6 +77,6 @@ app.UseSwaggerUI(c =>
 });
 
 app.VersionEndpoint();
-app.Idlink();
+app.IdLinkEndpoint();
 
 app.Run();

@@ -14,7 +14,7 @@ public static class UpdateEndpointsExt
   {
   }
 
-  public static void Idlink(this WebApplication app)
+  public static void IdLinkEndpoint(this WebApplication app)
   {
     app.MapGet("/update/{IdLink}",
         (

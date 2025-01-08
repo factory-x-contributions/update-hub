@@ -1,17 +1,10 @@
-// Feature flag to transition to controller-based API approach
-
 using System.Reflection;
 using Microsoft.OpenApi.Models;
 using UpdateHub;
 using UpdateHub.Configuration;
-using UpdateHub.Domain;
 using UpdateHub.Endpoints;
 
 using Serilog;
-using YamlDotNet.Serialization.NamingConventions;
-using YamlDotNet.Serialization;
-using System;
-using System.IO.Enumeration;
 using OpenTelemetry.Metrics;
 
 var CONFIG_FILE_PATH = Environment.GetEnvironmentVariable("CONFIG_FILE_PATH") ?? "./config.yaml";

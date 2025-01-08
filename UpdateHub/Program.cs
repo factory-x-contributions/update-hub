@@ -65,7 +65,7 @@ builder.Services.AddHttpClient(string.Empty).ConfigureHttpClient(c => {
 });
 
 var app = builder.Build();
-app.MapHealthChecks("/healthz");
+app.MapHealthChecks("/healthz").DisableHttpMetrics();
 
 if (System.Environment.GetEnvironmentVariable("ENABLE_METRIC") == "true")
   app.MapPrometheusScrapingEndpoint();

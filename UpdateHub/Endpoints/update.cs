@@ -1,18 +1,32 @@
+using System.Buffers.Text;
 using System.Net;
+using System.Net.Mime;
+using System.Reflection.Metadata;
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
-using Microsoft.AspNetCore.Http.HttpResults;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.Net.Http.Headers;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Serilog;
 using UpdateHub.Helper;
 
 namespace UpdateHub.Endpoints;
 
 using Refit;
+using UpdateHub;
 using Domain;
+using Configuration;
+using Microsoft.AspNetCore.Http.HttpResults;
+using System.Text.Json;
+using UpdateHub.Models;
 
 public static class UpdateEndpointsExt
 {
-  internal record UpdateInformation(List<JsonNode> ProductChangeNotifications, List<JsonNode> SoftwareNamePlates)
-  {
-  }
+  
 
   public static void IdLinkEndpoint(this WebApplication app)
   {
@@ -113,8 +127,9 @@ public static class UpdateEndpointsExt
             }
           }
 
-          var productChangeNofication = new UpdateInformation(receivedPcns.Values.ToList(), receivedSoftwareNameplates.Values.ToList());
-          return Results.Json(productChangeNofication);
+          var updates = PcnParser.parsePcnAndSoftwareNameplateSubmodels(receivedPcns.Values.ToList(), receivedSoftwareNameplates.Values.ToList());
+
+            return Results.Json(updates);
           }
           catch (System.Net.Sockets.SocketException e)
           {

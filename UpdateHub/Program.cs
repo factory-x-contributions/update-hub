@@ -49,8 +49,10 @@ builder.Services.AddOpenTelemetry()
 
 builder.Services.AddSingleton(parser.aasServerRepository);
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddControllers();
 builder.Services.AddSwaggerGen(c =>
 {
+  c.EnableAnnotations();
   c.SwaggerDoc("v1", new OpenApiInfo
   {
     Title = "UpdateHub", Version = "v1",
@@ -91,5 +93,8 @@ app.UseSwaggerUI(c =>
 
 app.VersionEndpoint();
 app.IdLinkEndpoint();
+
+app.UseRouting();
+app.MapControllers();
 
 app.Run();

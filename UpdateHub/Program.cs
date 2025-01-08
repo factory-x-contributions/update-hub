@@ -33,6 +33,7 @@ builder.Services.AddHealthChecks();
 builder.Services.AddOpenTelemetry().WithMetrics(builder =>
 {
   builder.AddPrometheusExporter();
+  builder.AddAspNetCoreInstrumentation();
 
   builder.AddMeter("Microsoft.AspNetCore.Hosting",
     "Microsoft.AspNetCore.Server.Kestrel");

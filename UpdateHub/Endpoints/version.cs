@@ -1,5 +1,4 @@
 namespace UpdateHub.Endpoints;
-using UpdateHub;
 
 public static class Version
 {
@@ -11,7 +10,10 @@ public static class Version
   {
     app.MapGet("/version", () =>
       {
-        var version = new ServiceVersion( GitHash.major, GitHash.minor, GitHash.patch, GitHash.Value);
+        var version = new ServiceVersion( UpdateHub.Version.ServiceVersion.Major(),
+          UpdateHub.Version.ServiceVersion.Minor(),
+          UpdateHub.Version.ServiceVersion.Patch(),
+          UpdateHub.Version.ServiceVersion.Commit());
         return Results.Json(version);
       })
       .WithName("version")

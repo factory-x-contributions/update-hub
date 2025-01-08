@@ -32,7 +32,7 @@ variables:
 dev:update-hub:plan:
   extends: .common-tofu
   script:
-    - tofu plan -var-file="tfvars/${TF_VARFILE}" -var-file="tfvars/ci.tfvars" -out=${TF_PLANFILE} -lock="${LOCK_FLAG}"
+    - tofu plan -var-file="tfvars/${TF_VARFILE}" -out=${TF_PLANFILE} -lock="${LOCK_FLAG}"
   artifacts:
     paths:
       - ${TF_FOLDER}/${TF_PLANFILE}

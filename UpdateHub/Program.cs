@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using System.Reflection;
 using Microsoft.OpenApi.Models;
 using UpdateHub;
@@ -6,14 +7,18 @@ using UpdateHub.Endpoints;
 
 using Serilog;
 using OpenTelemetry.Metrics;
+using Serilog.Core;
+using Serilog.Events;
 
 var CONFIG_FILE_PATH = Environment.GetEnvironmentVariable("CONFIG_FILE_PATH") ?? "./config.yaml";
 
 // Configure logging
+var levelSwitch = new LoggingLevelSwitch();
 Log.Logger = new LoggerConfiguration()
   .WriteTo.Console()
-  .MinimumLevel.Debug()
+  .MinimumLevel.ControlledBy(levelSwitch)
   .CreateLogger();
+levelSwitch.MinimumLevel = LogEventLevel.Information;
 
 Log.Information("Starting up. Version: {0}.{1}.{2} Commit: {3}", GitHash.major, GitHash.minor, GitHash.patch,GitHash.Value);
 
@@ -58,6 +63,13 @@ builder.Services.AddHttpClient(string.Empty).ConfigureHttpClient(c => {
 });
 
 var app = builder.Build();
+// In development mode raise
+if (app.Environment.IsDevelopment())
+{
+  Log.Information("Set log level to Debug");
+  levelSwitch.MinimumLevel = LogEventLevel.Debug;
+}
+
 app.MapHealthChecks("/healthz").DisableHttpMetrics();
 
 if (System.Environment.GetEnvironmentVariable("ENABLE_METRIC") == "true")

@@ -1,3 +1,10 @@
+variable "config_file_path" {
+  type = string
+  default = "./config.yaml"
+}
+
+//---------------------------------------------------------------------
+
 variable "github_pat_username" {
   type = string
 }

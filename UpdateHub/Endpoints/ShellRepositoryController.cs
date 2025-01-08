@@ -111,48 +111,46 @@ namespace UpdateHub.Endpoints
     /// <response code="404">Not Found</response>
     /// <response code="500">Internal Server Error</response>
     /// <response code="0">Default error handling for unmentioned status codes</response>
-    [HttpGet]
-    [Route("/{aasIdentifier}")]
-    [SwaggerOperation("GetAssetAdministrationShellById")]
-    [SwaggerResponse(statusCode: 200, type: typeof(AssetAdministrationShell), description: "Requested Asset Administration Shell")]
-    [SwaggerResponse(statusCode: 400, type: typeof(Result), description: "Bad Request, e.g. the request parameters of the format of the request body is wrong.")]
-    [SwaggerResponse(statusCode: 401, type: typeof(Result), description: "Unauthorized, e.g. the server refused the authorization attempt.")]
-    [SwaggerResponse(statusCode: 403, type: typeof(Result), description: "Forbidden")]
-    [SwaggerResponse(statusCode: 404, type: typeof(Result), description: "Not Found")]
-    [SwaggerResponse(statusCode: 500, type: typeof(Result), description: "Internal Server Error")]
-    [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
-    public virtual IActionResult GetAssetAdministrationShellById([FromRoute][Required] string aasIdentifier)
-    {
+    //  [HttpGet]
+    //  [Route("/{aasIdentifier}")]
+    //  [SwaggerOperation("GetAssetAdministrationShellById")]
+    //  [SwaggerResponse(statusCode: 200, type: typeof(AssetAdministrationShell), description: "Requested Asset Administration Shell")]
+    //  [SwaggerResponse(statusCode: 400, type: typeof(Result), description: "Bad Request, e.g. the request parameters of the format of the request body is wrong.")]
+    //  [SwaggerResponse(statusCode: 401, type: typeof(Result), description: "Unauthorized, e.g. the server refused the authorization attempt.")]
+    //  [SwaggerResponse(statusCode: 403, type: typeof(Result), description: "Forbidden")]
+    //  [SwaggerResponse(statusCode: 404, type: typeof(Result), description: "Not Found")]
+    //  [SwaggerResponse(statusCode: 500, type: typeof(Result), description: "Internal Server Error")]
+    //  [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
+    //  public virtual IActionResult GetAssetAdministrationShellById([FromRoute][Required] string aasIdentifier)
+    //  {
 
+    //    //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+    //    // return StatusCode(200, default(AssetAdministrationShell));
 
+    //    //TODO: Uncomment the next line to return response 400 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+    //    // return StatusCode(400, default(Result));
 
-      //TODO: Uncomment the next line to return response 200 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-      // return StatusCode(200, default(AssetAdministrationShell));
+    //    //TODO: Uncomment the next line to return response 401 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+    //    // return StatusCode(401, default(Result));
 
-      //TODO: Uncomment the next line to return response 400 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-      // return StatusCode(400, default(Result));
+    //    //TODO: Uncomment the next line to return response 403 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+    //    // return StatusCode(403, default(Result));
 
-      //TODO: Uncomment the next line to return response 401 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-      // return StatusCode(401, default(Result));
+    //    //TODO: Uncomment the next line to return response 404 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+    //    // return StatusCode(404, default(Result));
 
-      //TODO: Uncomment the next line to return response 403 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-      // return StatusCode(403, default(Result));
+    //    //TODO: Uncomment the next line to return response 500 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+    //    // return StatusCode(500, default(Result));
 
-      //TODO: Uncomment the next line to return response 404 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-      // return StatusCode(404, default(Result));
+    //    //TODO: Uncomment the next line to return response 0 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
+    //    // return StatusCode(0, default(Result));
+    //    string exampleJson = null;
+    //    exampleJson = "\"\"";
 
-      //TODO: Uncomment the next line to return response 500 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-      // return StatusCode(500, default(Result));
-
-      //TODO: Uncomment the next line to return response 0 or use other options such as return this.NotFound(), return this.BadRequest(..), ...
-      // return StatusCode(0, default(Result));
-      string exampleJson = null;
-      exampleJson = "\"\"";
-
-      var example = exampleJson != null
-      ? JsonConvert.DeserializeObject<AssetAdministrationShell>(exampleJson)
-      : default(AssetAdministrationShell);            //TODO: Change the data returned
-      return new ObjectResult(example);
-    }
+    //    var example = exampleJson != null
+    //    ? JsonConvert.DeserializeObject<AssetAdministrationShell>(exampleJson)
+    //    : default(AssetAdministrationShell);            //TODO: Change the data returned
+    //    return new ObjectResult(example);
+    //  }
   }
 }

@@ -73,7 +73,10 @@ if (app.Environment.IsDevelopment())
 app.MapHealthChecks("/healthz").DisableHttpMetrics();
 
 if (System.Environment.GetEnvironmentVariable("ENABLE_METRIC") == "true")
+{
+  Log.Information("Metric endpoint active");
   app.MapPrometheusScrapingEndpoint();
+}
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>

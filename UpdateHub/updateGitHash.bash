@@ -13,11 +13,11 @@ else
 fi
 
 # Path to the GitHash.cs file
-GIT_HASH_FILE="./gitHash.cs"
+GIT_HASH_FILE="./Version/gitHash.cs"
 
 # Create the GitHash.cs file with the Git hash
 cat << EOF > $GIT_HASH_FILE
-namespace UpdateHub;
+namespace UpdateHub.Version;
 
 public static class GitHash
 {

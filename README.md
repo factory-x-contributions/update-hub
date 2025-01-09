@@ -28,6 +28,21 @@ C4Context
 $ cd UpdateWHub/ dotnet run
 ```
 
+Or as container:
+```bash
+# Please place a valid config.yaml file in the same directory.
+# This exposes port 5292 (Dev version) and 8000 (Prod version)
+$ docker run -p 8000:8080 -p 5292:8080 -v ./config.yaml:/app/config.yaml ghcr.io/industrial-asset-hub/irs:latest
+```
+
+For a brief smoketest, a [hurl](https://hurl.dev) file is included.
+> This test is not exhaustive and only checks if the service is running and responding.
+> In addition, it checks if given IdLinks for *real* AAS servers are working.
+```
+$ hurl UpdateHub/tests.hurl --test
+UpdateHub/tests.hurl: Running [1/1]
+```
+
 ## Process view
 
 ```mermaid
@@ -61,13 +76,8 @@ sequenceDiagram
 ## Deployment view
 
 ### Static view
-As of now, this service is being build as one docker image. This image is hosted on ECS in the AWS CDM Dev account.
 
-### Dynamic view
-
-#### Update of the service:
-With every commit, regardless of branch, a new image is being build, stored and deployed.<br>
- * all images are stored in the Github container registry ghcr.io
+As of now, this service is being build as one docker image.
 
 ### Configuration file
 

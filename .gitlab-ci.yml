@@ -26,7 +26,7 @@ variables:
   TF_VAR_JWT_ROLE_NAME: $DEV_TF_VAR_JWT_ROLE_NAME
   PROD_AWS_ACCOUNT_ID: $PROD_AWS_ACCOUNT_ID
   TF_VAR_repository: $CI_PROJECT_PATH
-  TF_VAR_config_file_path: $config
+  TF_VAR_config_file_path: "${config}.yaml"
   
   COMPONENT_NAME: updatehub
 
@@ -99,6 +99,7 @@ deploy:
   before_script: 
     - !reference [.common-tofu, before_script]
     - |
+      sleep 3600
       ecs_task_execution_role_arn=$(tofu output -raw -var-file="tfvars/${TF_VARFILE}" ecs_task_execution_role_arn)
       github_pat_secret_arn=$(tofu output -raw -var-file="tfvars/${TF_VARFILE}" github_pat_secret_arn)
       irs_log_group_name=$(tofu output -raw -var-file="tfvars/${TF_VARFILE}" irs_log_group_name)

@@ -5,7 +5,7 @@ locals {
 module "configBucket" {
   source = "git::https://code.siemens.com/devops/iac/aws/tf-modules/s3-bucket"
 
-  data_bucket_name              = "updateHub-databucket-${data.aws_caller_identity.current.account_id}"
+  data_bucket_name              = "updatehub-databucket-${data.aws_caller_identity.current.account_id}"
   data_bucket_enable_versioning = true
   create_logging_bucket         = false
 

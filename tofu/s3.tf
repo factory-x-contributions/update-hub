@@ -1,5 +1,5 @@
 locals {
-  config_source = "${path.module}/${var.config_file_path}"
+  config_source = "${var.config_file_path}"
 }
 
 module "configBucket" {

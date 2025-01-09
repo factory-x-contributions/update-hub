@@ -29,6 +29,9 @@ public static class ServiceVersion
 
   public static string FullVersion()
   {
-    return String.Format("{0}.{1}.{2}-{3}", Major().ToString(),Minor().ToString(),Patch().ToString(),Commit());
+    if (string.IsNullOrEmpty(Commit()))
+      return String.Format("{0}.{1}.{2}", Major().ToString(),Minor().ToString(),Patch().ToString());
+
+      return String.Format("{0}.{1}.{2}-{3}", Major().ToString(),Minor().ToString(),Patch().ToString(),Commit());
   }
 }

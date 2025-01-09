@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/shell-descriptors/MQ"
+  },
+  "response": {
+    "status": 200,
+    "body": '{"assetKind":"kind","submodelDescriptors":[{"id":"IdProductChangeNotification","idShort":"ProductChangeNotifications"},{"id":"IdSoftwareNameplate","idShort":"SoftwareNameplate"}]}',
+    "headers": {
+      "Content-Type": "application/json",
+      "X-Correlation-Id": "respond"
+    }
+  }
+}

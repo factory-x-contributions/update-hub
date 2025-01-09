@@ -29,5 +29,5 @@ WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "UpdateHub.dll"]
 
-HEALTHCHECK CMD curl --fail http://localhost:5292/healthz || exit
+HEALTHCHECK CMD curl --fail http://localhost:8080/healthz || exit
 

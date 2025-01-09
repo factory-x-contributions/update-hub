@@ -1,9 +1,18 @@
 include:
   - local: .helper/gitlab-ci/tofu/.common.yaml
+  - project: "common-device-management/utils/templates/gitlab-ci"
+    ref: main
+    file: "shared/versioning.yaml"
+  - project: "common-device-management/utils/templates/gitlab-ci"
+    ref: main
+    file: "shared/helm-packaging.yaml"
+
 
 stages:
+  - version
   - tofu
   - deploy
+  - upload
   
 variables:
   http_proxy: $CODE_PROXY
@@ -19,7 +28,7 @@ variables:
   TF_VAR_repository: $CI_PROJECT_PATH
   TF_VAR_config_file_path: $config
   
-  COMPONENT_NAME: updateHub
+  COMPONENT_NAME: updatehub
 
 
 ###########################################################################################################################################

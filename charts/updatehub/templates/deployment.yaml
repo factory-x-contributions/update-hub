@@ -48,10 +48,10 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-              {{- if .Values.args.configFilePath }}
+            {{- if .Values.args.configFilePath }}
             - name: CONFIG_FILE_PATH
               value: "{{ .Values.args.configFilePath }}"
-              {{- end }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.args.port }}

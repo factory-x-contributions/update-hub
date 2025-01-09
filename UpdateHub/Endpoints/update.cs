@@ -26,7 +26,9 @@ using UpdateHub.Models;
 
 public static class UpdateEndpointsExt
 {
-  
+  internal record UpdateInformationOld(List<JsonNode> ProductChangeNotifications, List<JsonNode> SoftwareNamePlates)
+  {
+  }
 
   public static void IdLinkEndpoint(this WebApplication app)
   {
@@ -44,6 +46,8 @@ public static class UpdateEndpointsExt
           if (!FeatureFlag)
             return Results.Problem("Feature Flag not set", statusCode: StatusCodes.Status501NotImplemented);
           */
+					var featureFlagSkipParseAAS = false;
+					bool.TryParse(request.Headers["SKIP_PARSE_AAS"].ToString().ToLower(), out featureFlagSkipParseAAS);
 
           var encodedIdLink = Uri.UnescapeDataString(IdLink);
           var aasServer = aasServerRepository.GetByIdLink(encodedIdLink);
@@ -127,9 +131,13 @@ public static class UpdateEndpointsExt
             }
           }
 
-          var updates = PcnParser.parsePcnAndSoftwareNameplateSubmodels(receivedPcns.Values.ToList(), receivedSoftwareNameplates.Values.ToList());
+					if (!featureFlagSkipParseAAS) {
+          	return Results.Json(PcnParser.parsePcnAndSoftwareNameplateSubmodels(receivedPcns.Values.ToList(), receivedSoftwareNameplates.Values.ToList()));
+					}
+					else {
+          	return Results.Json(new UpdateInformationOld(receivedPcns.Values.ToList(), receivedSoftwareNameplates.Values.ToList()));
+					}
 
-            return Results.Json(updates);
           }
           catch (System.Net.Sockets.SocketException e)
           {

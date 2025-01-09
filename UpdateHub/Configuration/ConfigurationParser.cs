@@ -2,6 +2,10 @@ using Serilog;
 using UpdateHub.Domain;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using Amazon.Runtime.CredentialManagement;
+using Amazon.S3.Model;
+using Amazon.S3;
+using Amazon;
 
 // Read configuration
 
@@ -11,7 +15,7 @@ public class Parser
 {
   public AasServerRepository aasServerRepository { get; set; } = null;
 
-  public void ReadConfig(string configFilePath)
+  public async void ReadConfig(string configFilePath)
   {
     var deserializer = new DeserializerBuilder()
       .WithNamingConvention(HyphenatedNamingConvention.Instance)
@@ -31,10 +35,43 @@ public class Parser
      ApplicationConfig applicationConfig = null;
     try
     {
-      using (var reader = new StreamReader(configFilePath))
-      {
+      
+      //Get config File from S3 Bucket
+      
+      try{
+        // Enviroment variables must be given for the s3Client configuration
+        var s3Client = new AmazonS3Client(RegionEndpoint.EUCentral1);
+        Log.Information("1S3 Client initialized successfully.");
+
+        var GetObjectRequest = new GetObjectRequest
+        {
+          BucketName = "updatehub-databucket-865989919048",
+          Key = "config.yaml"
+          
+        };
+        
+        using var getObjectResponse = s3Client.GetObjectAsync(GetObjectRequest).Result;
+        using var stream = getObjectResponse.ResponseStream;
+        using var reader = new StreamReader(stream);
+
+        // Read the content
+        // var content = await reader.ReadToEndAsync();
+        // Log.Information("Object content: " + content);
+
         applicationConfig = deserializer.Deserialize<ApplicationConfig>(reader);
       }
+      catch(AmazonS3Exception ex)
+      {
+          Log.Error($"Error encountered on server. Message:'{ex.Message}' when reading object 'config.yaml' from 'updatehub-databucket-865989919048'", ex);
+      }
+      catch (Exception ex)
+      {
+          Log.Error($"Unknown error encountered while accessing S3, Error Message:'{ex.Message}'", ex);
+      }
+
+      
+      
+      
     }
     catch (Exception e)
     {

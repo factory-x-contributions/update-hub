@@ -8,6 +8,7 @@ namespace UpdateHub.Models
       String date,
       String version,
       String installationUri,
+      String installationChecksum,
       JsonObject softwareNameplateSubmodel,
       JsonObject pcnRecord)
     {

@@ -80,11 +80,13 @@ namespace UpdateHub.Domain
                       var smcSoftwareNameplateType = softwareNameplateSubmodel.FindFirstIdShortAs<SubmodelElementCollection>("SoftwareNameplateType");
                       var propInstallationUri = smcSoftwareNameplateType.FindFirstIdShortAs<Property>("InstallationUri");
                       var installationUri = propInstallationUri.ValueAsText();
+                      var propInstallationChecksum = smcSoftwareNameplateType.FindFirstIdShortAs<Property>("InstallationChecksum");
+                      var installationChecksum = propInstallationChecksum.ValueAsText();
 
                       var serializedSoftwareNameplate = AasJsonization.Serialize.ToJsonObject(softwareNameplateSubmodel);
                       var serializedRecord = AasJsonization.Serialize.ToJsonObject(record);
 
-                      var update = new UpdateInformation(date, version, installationUri, serializedSoftwareNameplate, serializedRecord);
+                      var update = new UpdateInformation(date, version, installationUri, installationChecksum, serializedSoftwareNameplate, serializedRecord);
                       updates.Add(update);
                     }
                   }

@@ -6,6 +6,9 @@ include:
   - project: "common-device-management/utils/templates/gitlab-ci"
     ref: main
     file: "shared/helm-packaging.yaml"
+  - project: "common-device-management/utils/templates/gitlab-ci"
+    ref: main
+    file: "shared/dev-deployment.yaml"
 
 
 stages:
@@ -13,6 +16,7 @@ stages:
   - tofu
   - deploy
   - upload
+  - dev-deployment
   
 variables:
   http_proxy: $CODE_PROXY
@@ -144,3 +148,23 @@ deploy:
 createHelmPackage:
   extends: .package_push_helmchart
   needs: ["version"]
+
+###########################################################################################################################################
+### Stage: dev-deployment
+###########################################################################################################################################
+
+commitToUmbrella:
+  needs: ["version", "creatHelmPackage"]
+  variables:
+    BRANCH_TARGET_BRANCH: "fx/update-hub"
+    MAIN_TARGET_BRANCH: "fx/update-hub"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_TAG
+      exists:
+        - "**/Chart.yaml"
+    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH
+      exists:
+        - "**/Chart.yaml"
+      when: on_success
+      allow_failure: true
+

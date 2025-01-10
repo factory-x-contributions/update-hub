@@ -154,7 +154,7 @@ createHelmPackage:
 ###########################################################################################################################################
 
 commitToUmbrella:
-  needs: ["version", "creatHelmPackage"]
+  needs: ["version", "createHelmPackage"]
   variables:
     BRANCH_TARGET_BRANCH: "fx/update-hub"
     MAIN_TARGET_BRANCH: "fx/update-hub"

@@ -30,6 +30,7 @@ jobs:
         run: dotnet test
 
   build-container:
+    if: github.ref == 'refs/heads/main'
     name: Build container
     runs-on: ubuntu-latest
     permissions:

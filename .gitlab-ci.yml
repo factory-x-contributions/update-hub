@@ -2,6 +2,9 @@ include:
   - local: .helper/gitlab-ci/tofu/.common.yaml
   - project: "common-device-management/utils/templates/gitlab-ci"
     ref: main
+    file: "shared/base.yaml"
+  - project: "common-device-management/utils/templates/gitlab-ci"
+    ref: main
     file: "shared/versioning.yaml"
   - project: "common-device-management/utils/templates/gitlab-ci"
     ref: main
@@ -12,6 +15,8 @@ include:
 
 
 stages:
+  - check
+  - test
   - version
   - tofu
   - deploy

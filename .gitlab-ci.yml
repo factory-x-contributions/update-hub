@@ -62,7 +62,7 @@ sync-image:
     # Set SOURCE_IMAGE to the image you want to copy, e.g., docker://cr.siemens.com/your-group/your-project:latest
     # Set TARGET_IMAGE to the image you want to copy to, e.g., docker://your-ecr-id.dkr.ecr.your-region.amazonaws.com/your-project:latest
     - SOURCE_IMAGE=docker://$IMAGE_LOCATION:latest
-    - TARGET_IMAGE=$CI_REGISTRY_IMAGE/build/$COMPONENT_NAME:$IMAGE_TAG
+    - TARGET_IMAGE=docker://$CI_REGISTRY_IMAGE/build/$COMPONENT_NAME:$IMAGE_TAG
     - skopeo copy --all $SOURCE_IMAGE $TARGET_IMAGE
 
 

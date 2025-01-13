@@ -99,7 +99,8 @@ public static class UpdateEndpointsExt
 
           foreach (var shellId in shellIds.Content)
           {
-            var response = _restApiService.GetShellDescriptors(Base64UrlOwnImplementation.Encode(shellId)).Result;
+            var shellIdEncoded = Base64UrlOwnImplementation.Encode(shellId);
+            var response = _restApiService.GetShellDescriptors(shellIdEncoded).Result;
             if (!response.IsSuccessful)
               return Results.Problem("Error while fetching Shell Descriptors from AAS server",
                 statusCode: StatusCodes.Status500InternalServerError);
@@ -107,7 +108,7 @@ public static class UpdateEndpointsExt
 
             foreach (var d in response.Content.SubmodelDescriptors)
             {
-              if (d.idShort == "ProductChangeNotifications")
+              if (d.idShort.Contains("ProductChangeNotifications"))
               {
                 var pcn = _restApiService.GetSubmodelsFromShell(Base64UrlOwnImplementation.Encode(shellId), Base64UrlOwnImplementation.Encode(d.id))
                   .Result;
@@ -118,7 +119,7 @@ public static class UpdateEndpointsExt
                 receivedPcns[pcn.Content["id"].AsValue().ToString()] = pcn.Content;
               }
 
-              if (d.idShort == "SoftwareNameplate")
+              if (d.idShort.Contains("SoftwareNameplate"))
               {
                 var nameplate = _restApiService
                   .GetSubmodelsFromShell(Base64UrlOwnImplementation.Encode(shellId), Base64UrlOwnImplementation.Encode(d.id)).Result;

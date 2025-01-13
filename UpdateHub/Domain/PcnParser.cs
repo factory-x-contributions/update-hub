@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using AasCore.Aas3_0;
 using Extensions;
+using Serilog;
 using UpdateHub.Models;
 using AasJsonization = AasCore.Aas3_0.Jsonization;
 
@@ -59,9 +60,6 @@ namespace UpdateHub.Domain
                   {
                     if (key.Type.Equals(KeyTypes.Submodel))
                     {
-                      var softwareNameplateSubmodelId = key.Value;
-                      var softwareNameplateSubmodel = parsedSoftwareNameplateSubmodels[softwareNameplateSubmodelId];
-
                       var versionMLProperty = smcTechnicalDataChange.FindFirstIdShortAs<MultiLanguageProperty>("FirmwareVersion");
                       var version = "N/A";
                       if (versionMLProperty != null)
@@ -76,18 +74,41 @@ namespace UpdateHub.Domain
                         version = (string)versionValuesAsJson["value"];
 
                       }
+                      var softwareNameplateSubmodelId = key.Value;
+                      Submodel softwareNameplateSubmodel = null;
+                      if (parsedSoftwareNameplateSubmodels.ContainsKey(softwareNameplateSubmodelId))
+                      {
+                        softwareNameplateSubmodel = parsedSoftwareNameplateSubmodels[softwareNameplateSubmodelId];
+                      }
+                      else
+                      {
+                        foreach (var parsedSoftwareNameplateSubmodel in parsedSoftwareNameplateSubmodels.Values)
+                        {
+                          var smcSoftwareNameplateType = parsedSoftwareNameplateSubmodel.FindFirstIdShortAs<SubmodelElementCollection>("SoftwareNameplateType");
+                          var versionProperty = smcSoftwareNameplateType.FindFirstIdShortAs<Property>("Version");
+                          if (versionProperty.ValueAsText().Equals(version)) {
+                            softwareNameplateSubmodel = parsedSoftwareNameplateSubmodel;
+                          }
+                        }
+                      }
 
-                      var smcSoftwareNameplateType = softwareNameplateSubmodel.FindFirstIdShortAs<SubmodelElementCollection>("SoftwareNameplateType");
-                      var propInstallationUri = smcSoftwareNameplateType.FindFirstIdShortAs<Property>("InstallationUri");
-                      var installationUri = propInstallationUri.ValueAsText();
-                      var propInstallationChecksum = smcSoftwareNameplateType.FindFirstIdShortAs<Property>("InstallationChecksum");
-                      var installationChecksum = propInstallationChecksum.ValueAsText();
+                      if (softwareNameplateSubmodel != null) {
+                        var smcSoftwareNameplateType = softwareNameplateSubmodel.FindFirstIdShortAs<SubmodelElementCollection>("SoftwareNameplateType");
+                        var propInstallationUri = smcSoftwareNameplateType.FindFirstIdShortAs<Property>("InstallationUri");
+                        var installationUri = propInstallationUri.ValueAsText();
+                        var propInstallationChecksum = smcSoftwareNameplateType.FindFirstIdShortAs<Property>("InstallationChecksum");
+                        var installationChecksum = propInstallationChecksum.ValueAsText();
 
-                      var serializedSoftwareNameplate = AasJsonization.Serialize.ToJsonObject(softwareNameplateSubmodel);
-                      var serializedRecord = AasJsonization.Serialize.ToJsonObject(record);
+                        var serializedSoftwareNameplate = AasJsonization.Serialize.ToJsonObject(softwareNameplateSubmodel);
+                        var serializedRecord = AasJsonization.Serialize.ToJsonObject(record);
 
-                      var update = new UpdateInformation(date, version, installationUri, installationChecksum, serializedSoftwareNameplate, serializedRecord);
-                      updates.Add(update);
+                        var update = new UpdateInformation(date, version, installationUri, installationChecksum, serializedSoftwareNameplate, serializedRecord);
+                        updates.Add(update);
+                      }
+                      else
+                      {
+                        Log.Error($"Failed to find Software Nameplate Submodel for version '{version}'");
+                      }
                     }
                   }
 

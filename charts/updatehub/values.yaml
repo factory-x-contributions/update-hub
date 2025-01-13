@@ -9,7 +9,7 @@ global:
 replicaCount: 1
 
 image:
-  repository: cr.siemens.com/common-device-management/iam/updatehub/build/updatehub
+  repository: cr.siemens.com/common-device-management/factory-x/updatehub/build/updatehub
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"

@@ -35,28 +35,22 @@ public class Parser
      ApplicationConfig applicationConfig = null;
     try
     {
-      
+
       //Get config File from S3 Bucket
-      
       try{
         // Enviroment variables must be given for the s3Client configuration
         var s3Client = new AmazonS3Client(RegionEndpoint.EUCentral1);
-        Log.Information("1S3 Client initialized successfully.");
+        Log.Information("S3 Client initialized successfully.");
 
         var GetObjectRequest = new GetObjectRequest
         {
           BucketName = "updatehub-databucket-865989919048",
           Key = "config.yaml"
-          
         };
         
         using var getObjectResponse = s3Client.GetObjectAsync(GetObjectRequest).Result;
         using var stream = getObjectResponse.ResponseStream;
         using var reader = new StreamReader(stream);
-
-        // Read the content
-        // var content = await reader.ReadToEndAsync();
-        // Log.Information("Object content: " + content);
 
         applicationConfig = deserializer.Deserialize<ApplicationConfig>(reader);
       }
@@ -68,10 +62,6 @@ public class Parser
       {
           Log.Error($"Unknown error encountered while accessing S3, Error Message:'{ex.Message}'", ex);
       }
-
-      
-      
-      
     }
     catch (Exception e)
     {

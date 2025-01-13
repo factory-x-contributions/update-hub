@@ -52,7 +52,7 @@ Log.Information("Starting up. Version: {0}", ServiceVersion.FullVersion());
 
 var parser = new Parser();
 parser.ReadConfig(configFilePath);
-Log.Debug(parser.ToString());
+Log.Information(parser.ToString());
 
 // Configure web application
 var builder = WebApplication.CreateBuilder(args);

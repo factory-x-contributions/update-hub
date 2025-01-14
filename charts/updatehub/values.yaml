@@ -10,9 +10,9 @@ replicaCount: 1
 
 image:
   repository: cr.siemens.com/common-device-management/factory-x/updatehub/build/updatehub
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "latest"
+  tag: ""
 
 args:
   configFilePath: "./config.yaml"

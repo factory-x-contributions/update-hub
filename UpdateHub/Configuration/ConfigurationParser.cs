@@ -6,6 +6,8 @@ using Amazon.Runtime.CredentialManagement;
 using Amazon.S3.Model;
 using Amazon.S3;
 using Amazon;
+using System;
+using Amazon.S3.Util;
 
 // Read configuration
 
@@ -32,40 +34,60 @@ public class Parser
       .Build();
 
     Log.Information($"Reading configuration from {configFilePath}");
-     ApplicationConfig applicationConfig = null;
+    ApplicationConfig applicationConfig = null;
     try
     {
-
-      //Get config File from S3 Bucket
-      try{
-        // Enviroment variables must be given for the s3Client configuration
-        var s3Client = new AmazonS3Client(RegionEndpoint.EUCentral1);
-        Log.Information("S3 Client initialized successfully.");
-
-        var GetObjectRequest = new GetObjectRequest
+      var uri = new Uri(configFilePath);
+      AmazonS3Uri AmazonS3UriObject = null;
+      if(AmazonS3Uri.TryParseAmazonS3Uri(uri, out AmazonS3UriObject)){
+        try{
+          //Get config File from S3 Bucket
+          var BucketName = AmazonS3UriObject.Bucket;
+          var Key = AmazonS3UriObject.Key;
+          // Enviroment variables must be given for the s3Client configuration
+          var s3Client = new AmazonS3Client(RegionEndpoint.EUCentral1);
+          var GetObjectRequest = new GetObjectRequest
+          {
+            BucketName = BucketName,
+            Key = Key
+          };
+          using var getObjectResponse = s3Client.GetObjectAsync(GetObjectRequest).Result;
+          using var stream = getObjectResponse.ResponseStream;
+          using var reader = new StreamReader(stream);
+          applicationConfig = deserializer.Deserialize<ApplicationConfig>(reader);
+        }
+        catch(AmazonS3Exception ex)
         {
-          BucketName = "updatehub-databucket-865989919048",
-          Key = "config.yaml"
-        };
-        
-        using var getObjectResponse = s3Client.GetObjectAsync(GetObjectRequest).Result;
-        using var stream = getObjectResponse.ResponseStream;
-        using var reader = new StreamReader(stream);
-
-        applicationConfig = deserializer.Deserialize<ApplicationConfig>(reader);
-      }
-      catch(AmazonS3Exception ex)
-      {
-          Log.Error($"Error encountered on server. Message:'{ex.Message}' when reading object 'config.yaml' from 'updatehub-databucket-865989919048'", ex);
-      }
-      catch (Exception ex)
-      {
-          Log.Error($"Unknown error encountered while accessing S3, Error Message:'{ex.Message}'", ex);
+            Log.Error($"Error encountered on server. Message:'{ex.Message}' when reading object 'config.yaml' from 'updatehub-databucket-865989919048'", ex);
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"Unknown error encountered while accessing S3, Error Message:'{ex.Message}'", ex);
+        }
+      }else if(uri.IsFile){
+        try
+        {
+          using (var reader = new StreamReader(uri.LocalPath))
+          {
+            applicationConfig = deserializer.Deserialize<ApplicationConfig>(reader);
+          }
+        }
+        catch (Exception e)
+        {
+          Log.Error(e, $"Failed to read configuration file '{configFilePath}'");
+        }
       }
     }
     catch (Exception e)
     {
+      if(File.Exists(configFilePath)){
+        using (var reader = new StreamReader(configFilePath))
+          {
+            applicationConfig = deserializer.Deserialize<ApplicationConfig>(reader);
+          }
+      }else{
       Log.Error(e, $"Failed to read configuration file '{configFilePath}'");
+      }
     }
     aasServerRepository = new AasServerRepository();
     if (applicationConfig.aasServers == null|| applicationConfig.aasServers.Count == 0)

@@ -6,7 +6,7 @@ metadata:
   labels:
     name: {{ include "updatehub.s3Name" . }}
   annotations:
-    crossplane.io/external-name: {{ .Values.args.s3BucketName }}
+    crossplane.io/external-name: {{ include "updatehub.s3ExternalName" . }}
 spec:
   forProvider:
     assumeRolePolicyDocument: |
@@ -36,7 +36,7 @@ metadata:
     name: {{ include "updatehub.s3Name" . }}
 spec:
   forProvider:
-    name: {{ .Values.args.s3BucketName }}
+    name: {{ include "updatehub.s3ExternalName" . }}
     document: |
         {
           "Version": "2012-10-17",

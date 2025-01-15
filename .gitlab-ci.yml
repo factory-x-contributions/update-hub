@@ -20,7 +20,6 @@ stages:
   - version
   - sync
   - tofu
-  - deploy
   - upload
   - dev-deployment
   
@@ -115,60 +114,6 @@ dev:update-hub:destroy:
     # Only if explicitly triggered and variable is set
     - if: $CI_PIPELINE_SOURCE == "web" && $DESTROY_RESOURCE == "true"
       when: manual
-
-
-###########################################################################################################################################
-### Stage: deploy
-###########################################################################################################################################
-
-deploy:
-  stage: deploy
-  extends: .common-tofu
-  variables:
-    FILE: "${CI_PROJECT_DIR}/tofu/templates/irs-task-definition.json"
-    PORT: 8080
-    NAME: "$COMPONENT_NAME"
-    ECS_TASK_FAMILY: "irs-service-task"
-  before_script: 
-    - !reference [.common-tofu, before_script]
-    - |
-      ecs_task_execution_role_arn=$(tofu output -raw -var-file="tfvars/${TF_VARFILE}" ecs_task_execution_role_arn)
-      github_pat_secret_arn=$(tofu output -raw -var-file="tfvars/${TF_VARFILE}" github_pat_secret_arn)
-      irs_log_group_name=$(tofu output -raw -var-file="tfvars/${TF_VARFILE}" irs_log_group_name)
-      aws_ecs_cluster_name=$(tofu output -raw -var-file="tfvars/${TF_VARFILE}" aws_ecs_cluster_name)
-      aws_ecs_service_name=$(tofu output -raw -var-file="tfvars/${TF_VARFILE}" aws_ecs_service_name)
-
-      IMAGE="ghcr.io/industrial-asset-hub/irs:latest"
-      if [ $DIGIST ]; then
-        IMAGE="ghcr.io/industrial-asset-hub/irs@sha256:${DIGIST}"
-      fi
-  script: |
-    cat <<< $(jq --arg ecs_task_execution_role_arn "$ecs_task_execution_role_arn" '.executionRoleArn=$ecs_task_execution_role_arn' $FILE ) > $FILE
-    cat <<< $(jq --arg NAME "$NAME" '.containerDefinitions[0].name=$NAME' $FILE ) > $FILE
-    cat <<< $(jq --arg IMAGE "$IMAGE" '.containerDefinitions[0].image=$IMAGE' $FILE ) > $FILE
-    cat <<< $(jq --arg github_pat_secret_arn "$github_pat_secret_arn" '.containerDefinitions[0].repositoryCredentials.credentialsParameter=$github_pat_secret_arn' $FILE ) > $FILE
-    cat <<< $(jq --arg irs_log_group_name "$irs_log_group_name" '.containerDefinitions[0].logConfiguration.options."awslogs-group"=$irs_log_group_name' $FILE ) > $FILE
-    cat <<< $(jq --arg AWS_REGION "$AWS_REGION" '.containerDefinitions[0].logConfiguration.options."awslogs-region"=$AWS_REGION' $FILE ) > $FILE
-    cat <<< $(jq --argjson PORT "$PORT" '.containerDefinitions[0].portMappings[0].containerPort=$PORT' $FILE ) > $FILE
-    cat <<< $(jq --arg PORT "curl -f http://localhost:${PORT}/swagger/index.html || exit 1" '.containerDefinitions[0].healthCheck.command[1]=$PORT' $FILE ) > $FILE
-
-    export TASK_REVISION=$(aws ecs register-task-definition \
-      --family "$ECS_TASK_FAMILY" \
-      --cli-input-json file://$FILE \
-      --region $AWS_REGION | jq --raw-output '.taskDefinition.revision')
-
-    echo "Registered ECS Task Definition = "$TASK_REVISION
-    echo "Updated Task Definition = $ECS_TASK_FAMILY:"$TASK_REVISION
-
-    UPDATE_ECS_SERVICE=$(aws ecs update-service \
-      --cluster $aws_ecs_cluster_name \
-      --service $aws_ecs_service_name \
-      --task-definition $ECS_TASK_FAMILY:$TASK_REVISION \
-      --desired-count 1 \
-      --region $AWS_REGION \
-      --force-new-deployment | jq --raw-output '.service.serviceName')
-
-    echo "Deployment of $UPDATE_ECS_SERVICE has been completed"
 
 ###########################################################################################################################################
 ### Stage: upload

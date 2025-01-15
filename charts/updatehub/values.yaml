@@ -12,10 +12,10 @@ image:
   repository: cr.siemens.com/common-device-management/factory-x/updatehub/build/updatehub
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "latest"
 
 args:
-  configFilePath: "./config.yaml"
+  configFilePath: "s3://updatehub-databucket-865989919048/config.yaml"
   port: 8080
 
 imagePullSecrets:

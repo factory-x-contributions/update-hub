@@ -58,11 +58,13 @@ public class Parser
         }
         catch(AmazonS3Exception ex)
         {
-            Log.Error($"Error encountered on server. Message:'{ex.Message}' when reading object 'config.yaml' from 'updatehub-databucket-865989919048'", ex);
+            Log.Error($"Error encountered on server. Message:'{ex.Message}' when reading from S3 Bucket", ex);
+            Environment.Exit(1);
         }
         catch (Exception ex)
         {
             Log.Error($"Unknown error encountered while accessing S3, Error Message:'{ex.Message}'", ex);
+            Environment.Exit(1);
         }
       }else if(uri.IsFile){
         try
@@ -75,6 +77,7 @@ public class Parser
         catch (Exception e)
         {
           Log.Error(e, $"Failed to read configuration file '{configFilePath}'");
+          Environment.Exit(1);
         }
       }
     }
@@ -87,6 +90,7 @@ public class Parser
           }
       }else{
       Log.Error(e, $"Failed to read configuration file '{configFilePath}'");
+      Environment.Exit(1);
       }
     }
     aasServerRepository = new AasServerRepository();

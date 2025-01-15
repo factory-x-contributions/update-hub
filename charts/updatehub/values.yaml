@@ -1,10 +1,19 @@
 # global values overwritten in cdm umbrella chart
 global:
+  k8sCluster: 
+    name: "mycluster"
+    region: "eu-central-1"
+    awsAccountId: "42"
+    oidc: ""
+
   deployment:
     labels:
       tags.datadoghq.com/env: "default"
       tags.datadoghq.com/service: "{{ .Chart.Name }}"
       tags.datadoghq.com/version: "{{ .Chart.AppVersion }}"
+
+localstack:
+  enabled: false
 
 replicaCount: 1
 
@@ -16,6 +25,7 @@ image:
 
 args:
   configFilePath: "s3://updatehub-databucket-865989919048/config.yaml"
+  s3BucketName: updatehub-databucket-865989919048
   port: 8080
 
 imagePullSecrets:
@@ -26,9 +36,10 @@ fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: false
+  create: true
   # Annotations to add to the service account
-  annotations: { }
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::{{ int .Values.global.k8sCluster.awsAccountId }}:role/{{ include "updatehub.s3ExternalName" . }}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""

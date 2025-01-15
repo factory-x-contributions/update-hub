@@ -60,3 +60,24 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Create a prefix name for AWS resources.
+*/}}
+{{- define "updatehub.awsPrefix" -}}
+{{- printf "%s-%s-%s" .Values.global.k8sCluster.name .Release.Name .Chart.Name  | trunc 53 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create external name for S3.
+*/}}
+{{- define "updatehub.s3ExternalName" -}}
+{{- printf "%s-%s" (include "updatehub.awsPrefix" .) "config" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Create k8s name for S3.
+*/}}
+{{- define "updatehub.s3Name" -}}
+{{- include "updatehub.fullname" . | trunc 56 | printf "%s-config" }}
+{{- end }}

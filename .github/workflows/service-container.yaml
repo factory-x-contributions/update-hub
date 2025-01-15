@@ -3,11 +3,6 @@ name: "Service container"
 on:
   push:
 
-env:
-  PORT: 8080
-  NAME: "irs"
-  ECS_TASK_FAMILY: "irs-service-task"
-
 jobs:
   build:
     name: Build application
@@ -21,7 +16,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: "9.0.x"
       - name: Install dependencies
         run: dotnet restore
       - name: Build

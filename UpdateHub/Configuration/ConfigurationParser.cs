@@ -9,7 +9,7 @@ namespace UpdateHub.Configuration;
 
 public class Parser
 {
-  public AasServerRepository aasServerRepository { get; set; }
+  public AasServerRepository aasServerRepository { get; set; } = null;
 
   public void ReadConfig(string configFilePath)
   {
@@ -41,9 +41,10 @@ public class Parser
       Log.Error(e, $"Failed to read configuration file '{configFilePath}'");
     }
     aasServerRepository = new AasServerRepository();
-    if (applicationConfig.aasServers.Count == 0)
+    if (applicationConfig.aasServers == null|| applicationConfig.aasServers.Count == 0)
     {
       Log.Error("No AAS servers configured");
+      return;
     }
 
     foreach (var aasServerConfig in applicationConfig.aasServers)

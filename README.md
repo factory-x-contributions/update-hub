@@ -111,3 +111,11 @@ aas-servers:
     auth-type: bearertoken
     bearer-token: your-bearer-token
 ```
+### Environment Variables
+
+| Variable              | Description                         | Default  |
+|-----------------------|-------------------------------------|----------|
+| CONFIG_FILE_PATH      | Path to the configuration file      | config.yaml
+| ENABLE_METRICS        | Enable prometheus metrics  endpoint | false    |
+| OTLP_ENDPOINT_URL     | OpenTelemetry exporter endpoint | null     |
+| OTEL_CONSOLE_EXPORTER | Enable console exporter | false     |

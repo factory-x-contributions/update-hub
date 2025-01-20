@@ -7,6 +7,8 @@ using OpenTelemetry.Metrics;
 using Serilog.Core;
 using Serilog.Events;
 using UpdateHub.Version;
+using UpdateHub.Healthcheck;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var CONFIG_FILE_PATH = Environment.GetEnvironmentVariable("CONFIG_FILE_PATH") ?? "./config.yaml";
 
@@ -28,6 +30,7 @@ Log.Debug(parser.ToString());
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSerilog();
 builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks().AddCheck<HealthCheckConfiguration>("Configuration check");
 builder.Services.AddOpenTelemetry()
   .WithMetrics(builder =>
   {

@@ -59,12 +59,12 @@ public class Parser
         catch(AmazonS3Exception ex)
         {
             Log.Error($"Error encountered on server. Message:'{ex.Message}' when reading from S3 Bucket", ex);
-            Environment.Exit(1);
+            throw;
         }
         catch (Exception ex)
         {
             Log.Error($"Unknown error encountered while accessing S3, Error Message:'{ex.Message}'", ex);
-            Environment.Exit(1);
+            throw;
         }
       }else if(uri.IsFile){
         try
@@ -77,7 +77,7 @@ public class Parser
         catch (Exception e)
         {
           Log.Error(e, $"Failed to read configuration file '{configFilePath}'");
-          Environment.Exit(1);
+          throw;
         }
       }
     }
@@ -90,7 +90,7 @@ public class Parser
           }
       }else{
       Log.Error(e, $"Failed to read configuration file '{configFilePath}'");
-      Environment.Exit(1);
+      throw;
       }
     }
     aasServerRepository = new AasServerRepository();

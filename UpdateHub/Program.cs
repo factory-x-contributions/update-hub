@@ -17,13 +17,9 @@ using UpdateHub.Healthcheck;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Version = UpdateHub.Endpoints.Version;
 
-<<<<<<< HEAD
 var configFilePath = Environment.GetEnvironmentVariable("CONFIG_FILE_PATH") ?? "./config.yaml";
 var otlpEndpoint = Environment.GetEnvironmentVariable("OTLP_ENDPOINT_URL") ?? null;
 var enableConsoleExporter = Convert.ToBoolean(Environment.GetEnvironmentVariable("OTEL_CONSOLE_EXPORTER"));
-=======
-var CONFIG_FILE_PATH = Environment.GetEnvironmentVariable("CONFIG_FILE_PATH") ?? "file:///app/config.yaml";
->>>>>>> e4033d8 (feat: config can be S3 bucket or locally available)
 
 // Configure logging
 var levelSwitch = new LoggingLevelSwitch();

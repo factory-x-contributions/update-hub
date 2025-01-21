@@ -11,6 +11,9 @@
 
     <ItemGroup>
         <PackageReference Include="Aaspe.Common" Version="1.1.1" />
+        <PackageReference Include="AWSSDK.Core" Version="3.7.400.79" />
+        <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.401.28" />
+        <PackageReference Include="AWSSDK.S3" Version="3.7.411.3" />
         <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
         <PackageReference Include="Microsoft.AspNetCore.HeaderPropagation" Version="9.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />

@@ -402,3 +402,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# Docker Script
+update_docker.sh

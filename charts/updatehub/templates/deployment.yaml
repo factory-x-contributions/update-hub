@@ -48,6 +48,10 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
+            - name: ENABLE_METRIC
+              value: "true"
+            - name: OTLP_ENDPOINT_URL
+              value: "http://datadog.datadog.svc.cluster.local:4317"
             {{- if .Values.args.configFilePath }}
             - name: CONFIG_FILE_PATH
               value: "{{ .Values.args.configFilePath }}"

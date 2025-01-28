@@ -1,0 +1,13 @@
+﻿services:
+  update-hub:
+    image: ghcr.io/factory-x-contributions/update-hub:latest
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    environment:
+      ENABLE_METRIC: false
+      OTEL_CONSOLE_EXPORTER: false
+      #OTLP_ENDPOINT_URL: ''
+      #CONFIG_FILE_PATH: config.yaml
+    volumes:
+      - ./config.yaml:/app/config.yaml

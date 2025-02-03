@@ -12,7 +12,6 @@ using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
-using UpdateHub.Helper;
 
 namespace UpdateHub.Endpoints;
 
@@ -74,7 +73,7 @@ public static class UpdateEndpointsExt
           // Get assetID from IdLink
           //
           // @TODO: Detect a missing authorization. Currently, the AAS redirects ...
-          var shellIds = _restApiService.LookupShells(Base64UrlOwnImplementation.Encode(encodedIdLink)).Result;
+          var shellIds = _restApiService.LookupShells(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(encodedIdLink))).Result;
 
           // Check if endpoint is authorized
           // @TODO: Detect a missing authorization. Currently, the AAS redirects to an IDM, and response with a certain media
@@ -99,7 +98,7 @@ public static class UpdateEndpointsExt
 
           foreach (var shellId in shellIds.Content)
           {
-            var shellIdEncoded = Base64UrlOwnImplementation.Encode(shellId);
+            var shellIdEncoded = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId));
             var response = _restApiService.GetShellDescriptors(shellIdEncoded).Result;
             if (!response.IsSuccessful)
               return Results.Problem("Error while fetching Shell Descriptors from AAS server",
@@ -110,7 +109,7 @@ public static class UpdateEndpointsExt
             {
               if (d.idShort.Contains("ProductChangeNotifications"))
               {
-                var pcn = _restApiService.GetSubmodelsFromShell(Base64UrlOwnImplementation.Encode(shellId), Base64UrlOwnImplementation.Encode(d.id))
+                var pcn = _restApiService.GetSubmodelsFromShell(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)), Base64Url.EncodeToString(Encoding.UTF8.GetBytes(d.id)))
                   .Result;
                 if (!pcn.IsSuccessful)
                   return Results.Problem("Error while fetching PCN from AAS server",
@@ -122,7 +121,7 @@ public static class UpdateEndpointsExt
               if (d.idShort.Contains("SoftwareNameplate"))
               {
                 var nameplate = _restApiService
-                  .GetSubmodelsFromShell(Base64UrlOwnImplementation.Encode(shellId), Base64UrlOwnImplementation.Encode(d.id)).Result;
+                  .GetSubmodelsFromShell(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)), Base64Url.EncodeToString(Encoding.UTF8.GetBytes(d.id))).Result;
                 if (!nameplate.IsSuccessful)
                   return Results.Problem("Error while fetching Software Nameplate from AAS server",
                     statusCode: StatusCodes.Status500InternalServerError);

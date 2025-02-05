@@ -65,3 +65,19 @@ jsonpath "$.productChangeNotifications" count != 0
 jsonpath "$.softwareNamePlates" count != 0
 [Captures]
 in: body
+
+#
+# https://hilscher-aas.netiot.com/
+#
+# https://i.hilscher.com/00000000wlp
+GET http://localhost:5292/update/https%3A%2F%2Fi.hilscher.com%2F00000000wlp
+# Temporary, since the Aaas Lib does only support amd64
+SKIP_PARSE_AAS: true
+HTTP 200
+[Asserts]
+status == 200
+jsonpath "$.productChangeNotifications" count != 0
+jsonpath "$.softwareNamePlates" count != 0
+[Captures]
+in: body
+

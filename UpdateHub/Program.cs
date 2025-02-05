@@ -61,24 +61,19 @@ builder.Services.AddHealthChecks();
 builder.Services.AddHealthChecks().AddCheck<HealthCheckConfiguration>("Configuration check");
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCorrelationIdGenerator();
+// Forward if header is available
 builder.Services.AddHeaderPropagation(options =>
 {
   options.Headers.Add(CorrelationIdMiddleware.CorrelationIdHeader);
 });
-
+// Create new if not available
 builder.Services.AddHeaderPropagation(options =>
   {
-    //options.Headers.Add(CorrelationIdMiddleware.CorrelationIdHeader, context =>
     options.Headers.Add(CorrelationIdMiddleware.CorrelationIdHeader, context =>
     {
       return new StringValues(Guid.NewGuid().ToString());
     });
   });
-
-builder.Services.AddHeaderPropagation(options =>
-{
-  options.Headers.Add(CorrelationIdMiddleware.CorrelationIdHeader);
-});
 
 builder.Services.AddOpenTelemetry()
   .WithMetrics(builder =>

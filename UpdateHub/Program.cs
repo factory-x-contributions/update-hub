@@ -135,6 +135,7 @@ builder.Services.AddHttpClient(string.Empty).ConfigureHttpClient(c =>
   c.DefaultRequestHeaders.Add("User-Agent", "Updatehub/" + ServiceVersion.SemanticVersion());
   c.Timeout = TimeSpan.FromSeconds(10);
 }).AddHeaderPropagation();
+builder.Services.AddControllers();
 
 var app = builder.Build();
 // In development mode raise
@@ -161,4 +162,5 @@ app.UseSwaggerUI(c =>
 
 app.VersionEndpoint();
 app.IdLinkEndpoint();
+app.MapControllers();
 app.Run();

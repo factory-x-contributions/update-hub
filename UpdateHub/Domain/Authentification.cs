@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Serilog;
+using SSIExtension;
 
 namespace UpdateHub.Domain;
 
@@ -73,7 +75,7 @@ public class Oauth2CredentialsFlow : IAuth
 
     if (!token.IsSuccessful || (token.StatusCode != HttpStatusCode.OK))
     {
-      Console.WriteLine("HTTP Status Code: " + token.StatusCode);
+      Log.Information("HTTP Status Code: " + token.StatusCode);
       return false;
     }
 
@@ -100,6 +102,56 @@ public class BearerTokenAuth : IAuth
   public bool Authenticate(HttpClient httpclient)
   {
     httpclient.DefaultRequestHeaders.Add("Authorization", BearerToken);
+    return true;
+  }
+}
+
+
+public class HilscherLoginEndpointRequest
+{
+  [AliasAs("clientId")]
+  public string clientId { get; set; }
+
+  [AliasAs("secret")]
+  public string secret { get; set; }
+}
+
+public class HilscherLoginResponse
+{
+  [JsonPropertyName("token")]
+  public string Token { get; set; }
+}
+
+public interface IHilscherLogin
+{
+  [Post("")]
+  [Headers("Content-Type: application/json", "Accept: application/json")]
+  Task<ApiResponse<HilscherLoginResponse>> GetBearerToken(HilscherLoginEndpointRequest hilscherLoginEndpointRequest);
+}
+
+public class HilscherAuth : IAuth
+{
+  public string ClientId { set; get; }
+  public string Secret { set; get; }
+  public string LoginUrl {  set; get; }
+
+  public bool Authenticate(HttpClient httpClient)
+  {
+    HttpClient tokenHttpClient = new HttpClient();
+    tokenHttpClient.BaseAddress = new Uri(LoginUrl);
+    var _restApiService = RestService.For<IHilscherLogin>(tokenHttpClient);
+    var token = _restApiService.GetBearerToken(new HilscherLoginEndpointRequest
+    {
+      clientId = ClientId,
+      secret = Secret,
+    }).Result;
+    if (!token.IsSuccessful || (token.StatusCode != HttpStatusCode.OK))
+    {
+      Log.Information("HTTP Status Code: " + token.StatusCode);
+      return false;
+    }
+
+    httpClient.DefaultRequestHeaders.Add("Authorization", string.Format("Bearer {0}",token.Content.Token));
     return true;
   }
 }

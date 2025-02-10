@@ -28,6 +28,7 @@ public class Parser
           { "oauth2", typeof(AuthConfigOAuth2) },
           { "apikey", typeof(AuthConfigApiKey) },
           { "bearertoken", typeof(AuthConfigBearerToken) },
+          { "hilscher", typeof(AuthConfigHilscher) },
         };
         o.AddKeyValueTypeDiscriminator<AuthConfig>("auth-type", valueMappings);
       })
@@ -131,6 +132,15 @@ public class Parser
           aasServer.Auth = new BearerTokenAuth
           {
             BearerToken = bearerToken.BearerToken
+          };
+          break;
+        case AuthConfigHilscher hilscherLogin:
+          aasServer.Auth = new HilscherAuth()
+          {
+            ClientId = hilscherLogin.ClientId,
+            Secret = hilscherLogin.Secret,
+            LoginUrl = hilscherLogin.LoginUrl
+
           };
           break;
         case null:

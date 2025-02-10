@@ -117,6 +117,7 @@ builder.Services.AddOpenTelemetry()
     .AddService(serviceName: builder.Environment.ApplicationName, serviceVersion: ServiceVersion.FullVersion()));
 
 builder.Services.AddSingleton(parser.aasServerRepository);
+builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {

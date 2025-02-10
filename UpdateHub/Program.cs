@@ -46,7 +46,8 @@ Log.Logger = new LoggerConfiguration()
   // Adds the correlation id to the log and http headers. There is another middleware inside the service
   // which adds that as well, to decouple from the used logging library.
   .Enrich.WithCorrelationIdHeader(CorrelationIdMiddleware.CorrelationIdHeader)  // Add the correlation id to the log and http headers.
-  .CreateLogger();
+  .Enrich.WithRequestHeader(TenantIdMiddleware.TenantIdHeader,"TenantId")
+.CreateLogger();
 levelSwitch.MinimumLevel = LogEventLevel.Information;
 
 Log.Information("Starting up. Version: {0}", ServiceVersion.FullVersion());
@@ -150,6 +151,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapHealthChecks("/healthz").DisableHttpMetrics();
 app.AddCorrelationIdMiddleware();
+app.AddTenantIdMiddleware();
 app.UseHeaderPropagation();
 if (Environment.GetEnvironmentVariable("ENABLE_METRIC") == "true")
 {

@@ -52,6 +52,8 @@ spec:
               value: "true"
             - name: OTLP_ENDPOINT_URL
               value: "http://datadog.datadog.svc.cluster.local:4317"
+            - name: INVENTORY_API_SERVICE
+              value: "{{ tpl .Values.args.inventoryService . }}"
             {{- if .Values.args.configFilePath }}
             - name: CONFIG_FILE_PATH
               value: "{{ .Values.args.configFilePath }}"

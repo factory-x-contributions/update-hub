@@ -27,6 +27,7 @@ args:
   configFilePath: "s3://updatehub-databucket-865989919048/config.yaml"
   s3BucketName: updatehub-databucket-865989919048
   port: 8080
+  inventoryService: "{{ .Release.Name }}-inventory-api-service"
 
 imagePullSecrets:
   - name: group-registry-secret

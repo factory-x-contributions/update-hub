@@ -107,6 +107,7 @@ public class Parser
       {
         Name = aasServerConfig.Name,
         IdLinkPrefix = aasServerConfig.IdLinkPrefix,
+        AasEndpointPrefixes = aasServerConfig.AasEndpointPrefixes,
         Url = aasServerConfig.Url
       };
 

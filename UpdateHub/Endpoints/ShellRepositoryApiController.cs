@@ -132,7 +132,11 @@ namespace UpdateHub.Endpoints
       var aasServer = aasServerRepository.GetByIdLink(aasIdUnencoded);
       if (aasServer == null)
       {
-        return this.NotFound("No AAS Server for given aas id found");
+        aasServer = aasServerRepository.GetByAasEndpointPrefix(aasIdUnencoded);
+        if (aasServer == null)
+        {
+          return this.NotFound("No AAS Server for given aas id found");
+        }
       }
 
       var httpClient = httpClientFactory.CreateClient();

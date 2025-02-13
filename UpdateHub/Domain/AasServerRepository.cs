@@ -13,6 +13,7 @@ public class AasServer
 {
   public string Name { get; set; }
   public string IdLinkPrefix { get; set; }
+  public string[] AasEndpointPrefixes { get; set; }
   public string Url { get; set; }
   public IAuth? Auth { get; set; }
 }
@@ -33,7 +34,7 @@ public class AasServerRepository : IAasServerRepository
 
   public AasServer GetByIdLink(string idLink)
   {
-    if( string.IsNullOrEmpty(idLink))
+    if (string.IsNullOrEmpty(idLink))
     {
       return null;
     }
@@ -48,6 +49,29 @@ public class AasServerRepository : IAasServerRepository
 
     return null;
   }
+
+
+  public AasServer GetByAasEndpointPrefix(string aasId)
+  {
+    if (string.IsNullOrEmpty(aasId))
+    {
+      return null;
+    }
+
+    foreach (var aasServer in _aasServers)
+    {
+      foreach(var aasEndpointPreix in aasServer.AasEndpointPrefixes)
+      {
+        if (aasId.ToLower().Contains(aasEndpointPreix.ToLower()))
+        {
+          return aasServer;
+        }
+      }
+    }
+
+    return null;
+  }
+
 }
 
 /*

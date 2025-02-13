@@ -6,6 +6,8 @@ namespace UpdateHub.Configuration
 
     public string IdLinkPrefix { get; set; }
 
+    public string[] AasEndpointPrefixes { get; set; } = [];
+
     public string Url { get; set; }
 
     public AuthConfig Auth { get; set; }

@@ -161,10 +161,11 @@ public class Parser
     string ret = "AAS Server configuration:";
     foreach (var aasServer in aasServerRepository.GetAll())
     {
-      ret += string.Format("{0}Name: {1}{0}IdLinkPrefix: {2}{0}Url: {3}{0}Auth: {4}{0}",
+      ret += string.Format("{0}Name: {1}{0}IdLinkPrefix: {2}{0}AasEndpointPrefixe: {3}{0}Url: {4}{0}Auth: {5}{0}",
         Environment.NewLine,
         aasServer.Name,
         aasServer.IdLinkPrefix,
+        aasServer.AasEndpointPrefixes!=null ? string.Join(", ", aasServer.AasEndpointPrefixes): "none",
         aasServer.Url,
         aasServer.Auth != null ?  aasServer.Auth.GetType().ToString(): "none"
       );

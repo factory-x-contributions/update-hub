@@ -8,6 +8,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -28,10 +29,10 @@ using Service;
 
 public static class AssetEndpointsExt
 {
-  
-  public static void AssetIdEndpoint(this WebApplication app)
+
+  public static RouteGroupBuilder AssetIdEndpoint(this RouteGroupBuilder group)
   {
-    app.MapGet("/asset/{AssetId}",
+    group.MapGet("/asset/{AssetId}",
         (
           HttpRequest request,
           string AssetId,
@@ -70,5 +71,7 @@ public static class AssetEndpointsExt
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithOpenApi();
+
+    return group;
   }
 }

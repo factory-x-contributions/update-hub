@@ -170,7 +170,6 @@ builder.Services.AddHttpClient(string.Empty).ConfigureHttpClient(c =>
   options.Headers.Add("X-Correlation-Id");
 });
 
-
 builder.Services.AddRefitClient<IInventoryApi>().ConfigureHttpClient(c =>
 {
   c.BaseAddress = new Uri(inventoryEndpoint);
@@ -180,7 +179,6 @@ builder.Services.AddRefitClient<IInventoryApi>().ConfigureHttpClient(c =>
   options.Headers.Add("Xo-Cdm-Tenant-Id");
   options.Headers.Add("Xo-Cdm-User-Id");
   options.Headers.Add("Authorization");
-
 });
 
 builder.Services.AddControllers();
@@ -213,6 +211,9 @@ app.UseSwaggerUI(c =>
 app.VersionEndpoint();
 var updateGroup = app.NewVersionedApi();
 updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(1.0)).IdLinkEndpoint();
+
+var iahGroup = app.NewVersionedApi();
+updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(1.0)).AssetIdEndpoint();
+
 app.MapControllers();
-app.AssetIdEndpoint();
 app.Run();

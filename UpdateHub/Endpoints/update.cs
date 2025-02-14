@@ -22,6 +22,7 @@ using Configuration;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Text.Json;
 using UpdateHub.Models;
+using Service;
 
 public static class UpdateEndpointsExt
 {
@@ -34,8 +35,9 @@ public static class UpdateEndpointsExt
     app.MapGet("/update/{IdLink}",
         (
           HttpRequest request,
-          string IdLink,
-          IHttpClientFactory httpClientFactory, AasServerRepository aasServerRepository
+          string idLink,
+          IHttpClientFactory httpClientFactory,
+          IAasService aasService
         ) =>
         {
           // Is a feature flag set?
@@ -45,112 +47,31 @@ public static class UpdateEndpointsExt
           if (!FeatureFlag)
             return Results.Problem("Feature Flag not set", statusCode: StatusCodes.Status501NotImplemented);
           */
-					var featureFlagSkipParseAAS = false;
-					bool.TryParse(request.Headers["SKIP_PARSE_AAS"].ToString().ToLower(), out featureFlagSkipParseAAS);
 
-          var encodedIdLink = Uri.UnescapeDataString(IdLink);
-          var aasServer = aasServerRepository.GetByIdLink(encodedIdLink);
-          if (aasServer == null)
-            return Results.Problem("No AAS Server for given IDLink found", statusCode: StatusCodes.Status404NotFound);
-          //var httpClient = httpClientFactory.CreateClient(aasServer.Name);
-          var httpClient = httpClientFactory.CreateClient();
-
-
-          // TODO: use proper caching, instead of doing it for every curl.
-          // May, https://github.com/TurnerSoftware/CacheTower is an option
-          if (aasServer.Auth != null)
-          {
-            if (!aasServer.Auth.Authenticate(httpClient))
-              return Results.Problem("Error while executing authentication", statusCode: StatusCodes.Status401Unauthorized);
-          }
-          httpClient.BaseAddress = new Uri(aasServer.Url);
-          var _restApiService = RestService.For<IAasApi>(httpClient);
-
+          var featureFlagSkipParseAAS = false;
+          bool.TryParse(request.Headers["SKIP_PARSE_AAS"].ToString().ToLower(), out featureFlagSkipParseAAS);
+          var encodedIdLink = Uri.UnescapeDataString(idLink);
           try
           {
-
-          //
-          // Get assetID from IdLink
-          //
-          // @TODO: Detect a missing authorization. Currently, the AAS redirects ...
-          var shellIds = _restApiService.LookupShells(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(encodedIdLink))).Result;
-
-          // Check if endpoint is authorized
-          // @TODO: Detect a missing authorization. Currently, the AAS redirects to an IDM, and response with a certain media
-          // type. But, why does the AAS server does not issue a proper HTTP status code?
-          // Sick workaround with check for MediaType "text/html"
-          if ((shellIds.StatusCode == HttpStatusCode.Unauthorized) ||  (shellIds.ContentHeaders.ContentType.MediaType == "text/html"))
-            return Results.Problem("Error while access AAS server", statusCode: StatusCodes.Status401Unauthorized);
-
-          if (!shellIds.IsSuccessful)
-            return Results.Problem("Error while fetching IdLink from AAS server",
-              statusCode: StatusCodes.Status422UnprocessableEntity);
-          if (shellIds.Content.Count == 0 )
-            return Results.Problem("No shells found for given IdLink",
-              statusCode: StatusCodes.Status404NotFound);
-
-          Dictionary<string, JsonNode> receivedPcns = new();
-          Dictionary<string, JsonNode> receivedSoftwareNameplates = new();
-
-          //
-          // Shell Descriptors
-          //
-
-          foreach (var shellId in shellIds.Content)
+            return Results.Ok(aasService.GetSoftwareUpdate(encodedIdLink, featureFlagSkipParseAAS));
+          }
+          catch (HttpProblemResponseException e)
           {
-            var shellIdEncoded = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId));
-            var response = _restApiService.GetShellDescriptors(shellIdEncoded).Result;
-            if (!response.IsSuccessful)
-              return Results.Problem("Error while fetching Shell Descriptors from AAS server",
-                statusCode: StatusCodes.Status500InternalServerError);
-
-
-            foreach (var d in response.Content.SubmodelDescriptors)
-            {
-              if (d.idShort.Contains("ProductChangeNotifications"))
-              {
-                var pcn = _restApiService.GetSubmodelsFromShell(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)), Base64Url.EncodeToString(Encoding.UTF8.GetBytes(d.id)))
-                  .Result;
-                if (!pcn.IsSuccessful)
-                  return Results.Problem("Error while fetching PCN from AAS server",
-                    statusCode: StatusCodes.Status500InternalServerError);
-
-                receivedPcns[pcn.Content["id"].AsValue().ToString()] = pcn.Content;
-              }
-
-              if (d.idShort.Contains("SoftwareNameplate"))
-              {
-                var nameplate = _restApiService
-                  .GetSubmodelsFromShell(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)), Base64Url.EncodeToString(Encoding.UTF8.GetBytes(d.id))).Result;
-                if (!nameplate.IsSuccessful)
-                  return Results.Problem("Error while fetching Software Nameplate from AAS server",
-                    statusCode: StatusCodes.Status500InternalServerError);
-
-                receivedSoftwareNameplates[nameplate.Content["id"].AsValue().ToString()] = nameplate.Content;
-              }
-            }
+            return Results.Problem(e.Value.ToString(), statusCode: e.StatusCode);
           }
-
-					if (!featureFlagSkipParseAAS) {
-          	return Results.Json(PcnParser.parsePcnAndSoftwareNameplateSubmodels(receivedPcns.Values.ToList(), receivedSoftwareNameplates.Values.ToList()));
-					}
-					else {
-          	return Results.Json(new UpdateInformationOld(receivedPcns.Values.ToList(), receivedSoftwareNameplates.Values.ToList()));
-					}
-
-          }
-          catch (System.Net.Sockets.SocketException e)
-          {
-            return Results.Problem("AAS Server could not be reached.");
-          }
+          // Unknown exception handled by dotnet itself, with
+          // UseExceptionHandler and UseDeveloperExceptionPage
           catch (Exception e)
           {
-            Console.WriteLine(e);
-            return Results.Problem("Unknown exception", e.ToString());
+            Log.Information(e.ToString());
+            return Results.Problem(e.Message, statusCode: StatusCodes.Status500InternalServerError);
           }
+
+
+          
         })
       .WithName("update")
-      .WithDescription("No fully implemented, yet.\n")
+      .WithDescription("")
       .WithSummary("Resolves a IdLink to PCNs")
       .WithTags("SoftwareUpdate")
       .Produces<UpdateInformation[]>(StatusCodes.Status200OK)

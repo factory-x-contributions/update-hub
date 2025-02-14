@@ -17,6 +17,9 @@ using UpdateHub.Healthcheck;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using UpdateHub.Service;
 using Version = UpdateHub.Endpoints.Version;
+using Asp.Versioning;
+using Microsoft.Extensions.Options;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 var configFilePath = Environment.GetEnvironmentVariable("CONFIG_FILE_PATH") ?? "./config.yaml";
 var otlpEndpoint = Environment.GetEnvironmentVariable("OTLP_ENDPOINT_URL") ?? null;
@@ -120,6 +123,22 @@ builder.Services.AddOpenTelemetry()
 builder.Services.AddSingleton(parser.aasServerRepository);
 builder.Services.AddScoped<IAasService, AasService>();
 builder.Services.AddProblemDetails();
+builder.Services.AddApiVersioning(options =>
+  {
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = ApiVersionReader.Combine(
+      new UrlSegmentApiVersionReader(),
+      new HeaderApiVersionReader("X-Api-Version")
+    );
+  })
+  .AddMvc(options => {})
+  .AddApiExplorer(options =>
+  {
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+  }).EnableApiVersionBinding();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -165,6 +184,7 @@ app.UseSwaggerUI(c =>
 //app.UseExceptionHandler();
 //app.UseDeveloperExceptionPage();
 app.VersionEndpoint();
-app.IdLinkEndpoint();
+var updateGroup = app.NewVersionedApi();
+updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(1.0)).IdLinkEndpoint();
 app.MapControllers();
 app.Run();

@@ -8,6 +8,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -30,9 +31,9 @@ public static class UpdateEndpointsExt
   {
   }
 
-  public static void IdLinkEndpoint(this WebApplication app)
+  public static RouteGroupBuilder IdLinkEndpoint(this RouteGroupBuilder group)
   {
-    app.MapGet("/update/{IdLink}",
+    group.MapGet("/update/{IdLink}",
         (
           HttpRequest request,
           string idLink,
@@ -66,9 +67,6 @@ public static class UpdateEndpointsExt
             Log.Information(e.ToString());
             return Results.Problem(e.Message, statusCode: StatusCodes.Status500InternalServerError);
           }
-
-
-          
         })
       .WithName("update")
       .WithDescription("")
@@ -80,5 +78,7 @@ public static class UpdateEndpointsExt
       .ProducesProblem(StatusCodes.Status404NotFound)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithOpenApi();
+
+    return group;
   }
 }

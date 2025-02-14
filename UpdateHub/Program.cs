@@ -15,6 +15,7 @@ using UpdateHub.Middleware;
 using UpdateHub.Version;
 using UpdateHub.Healthcheck;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using UpdateHub.Service;
 using Version = UpdateHub.Endpoints.Version;
 
 var configFilePath = Environment.GetEnvironmentVariable("CONFIG_FILE_PATH") ?? "./config.yaml";
@@ -117,6 +118,7 @@ builder.Services.AddOpenTelemetry()
     .AddService(serviceName: builder.Environment.ApplicationName, serviceVersion: ServiceVersion.FullVersion()));
 
 builder.Services.AddSingleton(parser.aasServerRepository);
+builder.Services.AddScoped<IAasService, AasService>();
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -160,7 +162,8 @@ app.UseSwaggerUI(c =>
   c.SwaggerEndpoint("/swagger/v1/swagger.json", "UpdateHub v1");
   c.RoutePrefix = string.Empty; // Set Swagger UI at apps root
 });
-
+//app.UseExceptionHandler();
+//app.UseDeveloperExceptionPage();
 app.VersionEndpoint();
 app.IdLinkEndpoint();
 app.MapControllers();

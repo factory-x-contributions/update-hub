@@ -17,11 +17,14 @@ using UpdateHub.Healthcheck;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using UpdateHub.Service;
 using Version = UpdateHub.Endpoints.Version;
+using UpdateHub.Clients;
+using Refit;
+using UpdateHub.Domain;
 
 var configFilePath = Environment.GetEnvironmentVariable("CONFIG_FILE_PATH") ?? "./config.yaml";
 var otlpEndpoint = Environment.GetEnvironmentVariable("OTLP_ENDPOINT_URL") ?? null;
 var enableConsoleExporter = Convert.ToBoolean(Environment.GetEnvironmentVariable("OTEL_CONSOLE_EXPORTER"));
-
+var inventoryEndpoint = Environment.GetEnvironmentVariable("INVENTORY_API_SERVICE") ?? null;
 // Configure logging
 var levelSwitch = new LoggingLevelSwitch();
 Log.Logger = new LoggerConfiguration()
@@ -66,6 +69,9 @@ builder.Services.AddCorrelationIdGenerator();
 // Forward if header is available
 builder.Services.AddHeaderPropagation(options =>
 {
+  options.Headers.Add("Xo-Cdm-Tenant-Id");
+  options.Headers.Add("Xo-Cdm-User-Id");
+  options.Headers.Add("Authorization");
   options.Headers.Add(CorrelationIdMiddleware.CorrelationIdHeader);
 });
 // Create new if not available
@@ -120,6 +126,7 @@ builder.Services.AddOpenTelemetry()
 
 builder.Services.AddSingleton(parser.aasServerRepository);
 builder.Services.AddScoped<IAasService, AasService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -138,7 +145,24 @@ builder.Services.AddHttpClient(string.Empty).ConfigureHttpClient(c =>
 {
   c.DefaultRequestHeaders.Add("User-Agent", "Updatehub/" + ServiceVersion.SemanticVersion());
   c.Timeout = TimeSpan.FromSeconds(10);
-}).AddHeaderPropagation();
+}).AddHeaderPropagation(
+  options =>{
+  options.Headers.Add("X-Correlation-Id");
+});
+
+
+builder.Services.AddRefitClient<IInventoryApi>().ConfigureHttpClient(c =>
+{
+  c.BaseAddress = new Uri(inventoryEndpoint);
+  c.DefaultRequestHeaders.Add("User-Agent", "Updatehub/" + ServiceVersion.SemanticVersion());
+  c.Timeout = TimeSpan.FromSeconds(30);
+}).AddHeaderPropagation(options =>{
+  options.Headers.Add("Xo-Cdm-Tenant-Id");
+  options.Headers.Add("Xo-Cdm-User-Id");
+  options.Headers.Add("Authorization");
+
+});
+
 builder.Services.AddControllers();
 
 var app = builder.Build();
@@ -169,4 +193,5 @@ app.UseSwaggerUI(c =>
 app.VersionEndpoint();
 app.IdLinkEndpoint();
 app.MapControllers();
+app.AssetIdEndpoint();
 app.Run();

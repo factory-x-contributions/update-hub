@@ -52,25 +52,26 @@ UpdateHub/tests.hurl: Running [1/1]
 sequenceDiagram
   participant CDM
   participant Update Hub
-  participant AAS ShellRegistryAPI
-  participant AAS ShellRepositoryAPI
+  participant AAS DiscoveryApi
+  participant AAS RegistryAPI
+  participant AAS RepositoryAPI
 
   CDM->>Update Hub: /update/{dig. Nameplate}
 
-  Update Hub-->>AAS ShellRegistryAPI: /lookup/shells/{IDLink}
-  AAS ShellRegistryAPI-->>Update Hub: aasIdentifier
+  Update Hub-->>AAS DiscoveryApi: /lookup/shells/{IDLink}
+  AAS DiscoveryApi-->>Update Hub: aasIdentifier
   loop "loop over all AAS Identifier"
-    Update Hub-->>AAS ShellRegistryAPI: /shells/descriptors/{aasIdentifier}
-    AAS ShellRegistryAPI-->>Update Hub: submodel descriptors containing SM Ids
+    Update Hub-->>AAS RegistryAPI: /shells/descriptors/{aasIdentifier}
+    AAS RegistryAPI-->>Update Hub: submodel descriptors containing SM Ids
 
     loop "loop over all  Product Change Notification"
-      Update Hub -->>  ShellRepositoryAPI: /shells/{aasIdentifier}/submodels/{submodelIdentifier}
-      ShellRepositoryAPI -->> Update Hub: PCN Submodels
+      Update Hub -->>  AAS RepositoryAPI: /shells/{aasIdentifier}/submodels/{submodelIdentifier}
+      AAS RepositoryAPI -->> Update Hub: PCN Submodels
     end
 
     loop "loop over all Software Nameplate"
-      Update Hub -->>  ShellRepositoryAPI: /shells/{aasIdentifier}/submodels/{submodelIdentifier}
-      ShellRepositoryAPI -->> Update Hub: Software Nameplate Submodels
+      Update Hub -->>  AAS RepositoryAPI: /shells/{aasIdentifier}/submodels/{submodelIdentifier}
+      AAS RepositoryAPI -->> Update Hub: Software Nameplate Submodels
     end
   end
   Update Hub -->> CDM: Return PCNs and Software Nameplate

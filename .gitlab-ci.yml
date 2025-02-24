@@ -41,10 +41,8 @@ variables:
   TF_VAR_repository: $CI_PROJECT_PATH
   TF_VAR_config_file_path: $config
 
-  CONTAINER_TAG: "latest"
-
   COMPONENT_NAME: updatehub
-  CONTAINER_NAME: $CI_REGISTRY_IMAGE/$COMPONENT_NAME
+  CONTAINER_NAME: $CI_REGISTRY_IMAGE/build/$COMPONENT_NAME
   DOTNET_VERSION: "9.0"
 
 test:
@@ -183,7 +181,7 @@ dev:update-hub:destroy:
 
 createHelmPackage:
   extends: .package_push_helmchart
-  needs: ["version"]
+  needs: ["version", "container:multiarch"]
 
 ###########################################################################################################################################
 ### Stage: dev-deployment

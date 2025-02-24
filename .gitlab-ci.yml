@@ -18,7 +18,6 @@ include:
       - dotnet/run-dotnet-tests.gitlab-ci.yml
       - docker/build-docker-image.gitlab-ci.yml
 
-
 stages:
   - check
   - test
@@ -27,7 +26,7 @@ stages:
   - tofu
   - upload
   - dev-deployment
-  
+
 variables:
   http_proxy: $CODE_PROXY
   https_proxy: $CODE_PROXY
@@ -41,9 +40,11 @@ variables:
   PROD_AWS_ACCOUNT_ID: $PROD_AWS_ACCOUNT_ID
   TF_VAR_repository: $CI_PROJECT_PATH
   TF_VAR_config_file_path: $config
-  
-  COMPONENT_NAME: updatehub
 
+  CONTAINER_TAG: "latest"
+
+  COMPONENT_NAME: updatehub
+  CONTAINER_NAME: $CI_REGISTRY_IMAGE/$COMPONENT_NAME
   DOTNET_VERSION: "9.0"
 
 test:
@@ -70,21 +71,28 @@ build:
     - .awesome-ci/build-docker-image
   stage: build
   variables:
-    IMAGE_NAME: $COMPONENT_NAME
+    IMAGE_NAME: $CONTAINER_NAME
     BUILD_CONTEXT: $CI_PROJECT_DIR/
     EXTRA_ARGUMENTS: "--build-arg GIT_HASH=$CI_COMMIT_SHORT_SHA"
     BUILD_ENV: ""
+  # version job, inects IMAGE_TAG and overrides that vor all specific jobs.
+  # This is a workaround for the missing support of variables in extends
+  before_script:
+    - IMAGE_TAG=$IMAGE_TAG-$ARCH
+    - env | sort
 
 container:amd64:
   extends:
     - .container
   variables:
+    ARCH: amd64
     IMAGE_TAG: $CONTAINER_TAG-amd64
 
 container:arm64:
   extends:
     - .container
   variables:
+    ARCH: arm64
     IMAGE_TAG: $CONTAINER_TAG-arm64
   tags:
     - DOCKER-AARCH64
@@ -96,10 +104,10 @@ container:multiarch:
     entrypoint: [""]
   variables:
     IMAGE_NAME: $CONTAINER_NAME
-    MULTI_ARCH_IMAGE_TAG: $CONTAINER_TAG
+    MULTI_ARCH_IMAGE_TAG: $IMAGE_TAG
     REGISTRY_USER: "$CI_REGISTRY_USER"
     REGISTRY_PASSWORD: "$CI_REGISTRY_PASSWORD"
-    TEMPLATE: $CONTAINER_NAME:$CONTAINER_TAG-ARCH
+    TEMPLATE: $CONTAINER_NAME:$IMAGE_TAG-ARCH
   script:
     - manifest-tool --username $REGISTRY_USER --password $REGISTRY_PASSWORD push from-args
       --platforms=linux/amd64,linux/arm64
@@ -112,6 +120,8 @@ container:multiarch:
     - echo "IMAGE_TAG=$MULTI_ARCH_IMAGE_TAG" >> outputs.env
     - cat outputs.env
   needs:
+    - job: version
+      artifacts: true
     - job: container:amd64
       artifacts: false
     - job: container:arm64
@@ -133,7 +143,7 @@ dev:update-hub:plan:
       - ${TF_FOLDER}/${TF_PLANFILE}
   rules:
     - changes:
-      - tofu/**/* # all files under folder
+        - tofu/**/* # all files under folder
       when: on_success
 
 dev:update-hub:apply:
@@ -148,7 +158,7 @@ dev:update-hub:apply:
     - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH && $CI_COMMIT_TAG == null
       when: never
     - changes:
-      - tofu/**/* # all files under folder
+        - tofu/**/* # all files under folder
       when: manual
 
 dev:update-hub:destroy:
@@ -193,4 +203,3 @@ commitToUmbrella:
         - "**/Chart.yaml"
       when: on_success
       allow_failure: true
-

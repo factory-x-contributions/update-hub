@@ -1,3 +1,6 @@
+using UpdateHub.Domain;
+using UpdateHub.Service;
+
 namespace UpdateHub.Configuration
 {
   public class AasServerConfig
@@ -9,6 +12,9 @@ namespace UpdateHub.Configuration
     public string[] AasEndpointPrefixes { get; set; } = [];
 
     public string Url { get; set; }
+    public string DiscoveryUrl { get; set; }
+
+    public IAasService.AasVersion? Version { get; set; }
 
     public AuthConfig Auth { get; set; }
 

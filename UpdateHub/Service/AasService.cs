@@ -9,12 +9,21 @@ using UpdateHub.Domain;
 using UpdateHub.Models;
 
 namespace UpdateHub.Service;
+
+
 public interface IAasService
 {
-  public List<UpdateInformation> GetSoftwareUpdate(string idLink, bool featureFlagSkipParseAAS);
+  enum AasVersion
+  {
+    Basyx,
+    v30,
+  }
+
+  public List<UpdateInformation> GetSoftwareUpdate(string idLink, HttpRequest request);
 }
 
-public class AasService : IAasService
+
+public partial class AasService : IAasService
 {
   private readonly AasServerRepository? _repository;
   private readonly IHttpClientFactory? _httpClientFactory;
@@ -25,12 +34,35 @@ public class AasService : IAasService
     _httpClientFactory = httpClientFactory;
   }
 
-  public List<UpdateInformation> GetSoftwareUpdate(string idLink, bool featureFlagSkipParseAAS)
+  private bool skipParseAas(HttpRequest request)
   {
+    var flag = false;
+    return bool.TryParse(request.Headers["SKIP_PARSE_AAS"].ToString().ToLower(), out flag);
+  }
+
+  public List<UpdateInformation> GetSoftwareUpdate(string idLink, HttpRequest request)
+  {
+    var featureFlagSkipParseAAS = skipParseAas(request);
+
     var aasServer = _repository.GetByIdLink(idLink);
     if (aasServer == null)
       throw new HttpProblemResponseException(StatusCodes.Status404NotFound,"No AAS Server for given IDLink found");
 
+    switch (aasServer.Version)
+    {
+      case IAasService.AasVersion.Basyx:
+        Log.Debug("Use Basyx flow");
+        return getSoftwareUpdateBasyx(idLink, aasServer, featureFlagSkipParseAAS);
+      case IAasService.AasVersion.v30:
+        Log.Debug("Use v30 flow");
+        return getSoftwareUpdateV3(idLink, aasServer, featureFlagSkipParseAAS);
+    }
+
+    throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError,"Error while fetching software update");
+  }
+
+  private List<UpdateInformation> getSoftwareUpdateBasyx(string idLink, AasServer aasServer, bool featureFlagSkipParseAAS)
+  {
     var httpClient = _httpClientFactory.CreateClient();
     if (aasServer.Auth != null)
       if (!aasServer.Auth.Authenticate(httpClient))

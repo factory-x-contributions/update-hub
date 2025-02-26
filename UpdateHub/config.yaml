@@ -24,9 +24,18 @@ aas-servers:
 
 - name: SampleAasServerHilscherLogin
   id-link-prefix: https://sample-company-2.com/
+  version: v30 # v30 or basyx (default)
   url: https://sample-company-1.com/products/aas
+  discovery-url: https://sample-company-1.com/products/aas/v3.0 # Only used for v30
   auth:
       auth-type: hilscher
       client-id: my-client-id
       secret: my-secret
       login-url: https://hilscher-aas.netiot.com/login
+
+- name: SampleAasServerv30
+  id-link-prefix: https://sample-company-2.com/
+  version: v30 # v30 or basyx (default)
+  url: https://sample-company-1.com/products/aas
+  discovery-url: https://sample-company-1.com/products/aas/v3.0 # Only used for v30
+  auth:

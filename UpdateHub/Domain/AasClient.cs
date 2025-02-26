@@ -15,7 +15,7 @@ public interface IAasApi
 
   [Get("/lookup/shells?assetId={idLink}")]
   [Headers("Content-Type: application/json")]
-  Task<ApiResponse<List<string>>> LookupShells(string idLink);
+  Task<ApiResponse<List<string>>> LookupShellsByAssetId(string idLink);
 
 
   public class SubmodelDescriptors

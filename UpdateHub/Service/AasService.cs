@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json.Nodes;
 using Refit;
+using Serilog;
 using UpdateHub.Domain;
 using UpdateHub.Models;
 
@@ -43,7 +44,7 @@ public class AasService : IAasService
       // Get assetID from IdLink
       //
       // @TODO: Detect a missing authorization. Currently, the AAS redirects ...
-      var shellIds = _restApiService.LookupShells(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(idLink))).Result;
+      var shellIds = _restApiService.LookupShellsByAssetId(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(idLink))).Result;
 
       // Check if endpoint is authorized
       // @TODO: Detect a missing authorization. Currently, the AAS redirects to an IDM, and response with a certain media
@@ -65,7 +66,6 @@ public class AasService : IAasService
       //
       // Shell Descriptors
       //
-
       foreach (var shellId in shellIds.Content)
       {
         var shellIdEncoded = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId));
@@ -104,8 +104,19 @@ public class AasService : IAasService
         return PcnParser.parsePcnAndSoftwareNameplateSubmodels(receivedPcns.Values.ToList(),
           receivedSoftwareNameplates.Values.ToList());
 
+      // Fallback, since the AAS libary does not work on arm64
+      JsonObject pcnJsonObject = null;
+      JsonObject softwareNameplateJsonObject = null;
+      foreach (var l in receivedSoftwareNameplates)
+      {
+        softwareNameplateJsonObject = l.Value.AsObject();
+      }
+      foreach (var l in receivedPcns)
+      {
+        pcnJsonObject = l.Value.AsObject();
+      }
       var updates = new List<UpdateInformation>();
-      var update = new UpdateInformation("", "", "", "", null, null);
+      var update = new UpdateInformation("", "", "", "", softwareNameplateJsonObject, pcnJsonObject);
       updates.Add(update);
 
       return updates;

@@ -68,7 +68,7 @@ public class DiscoveryApiController : ControllerBase
     var _restApiService = RestService.For<IAasApi>(httpClient);
 
     // Get shell ids for asset id
-    var shellIds = _restApiService.LookupShells(assetIdEncoded).Result;
+    var shellIds = _restApiService.LookupShellsByAssetId(assetIdEncoded).Result;
 
     if ((shellIds.StatusCode == HttpStatusCode.Unauthorized) ||  (shellIds.ContentHeaders.ContentType.MediaType == "text/html"))
       return this.Unauthorized("Error while access AAS server");

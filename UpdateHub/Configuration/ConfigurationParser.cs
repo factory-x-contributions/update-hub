@@ -8,6 +8,7 @@ using Amazon.S3;
 using Amazon;
 using System;
 using Amazon.S3.Util;
+using UpdateHub.Service;
 
 // Read configuration
 
@@ -108,8 +109,15 @@ public class Parser
         Name = aasServerConfig.Name,
         IdLinkPrefix = aasServerConfig.IdLinkPrefix,
         AasEndpointPrefixes = aasServerConfig.AasEndpointPrefixes,
-        Url = aasServerConfig.Url
-      };
+        Url = aasServerConfig.Url,
+        DiscoveryUrl = aasServerConfig.DiscoveryUrl ?? null,
+        Version = aasServerConfig.Version.ToString() switch
+        {
+          "basyx" => IAasService.AasVersion.Basyx,
+          "v30" => IAasService.AasVersion.v30,
+          _ => IAasService.AasVersion.Basyx
+        },
+        };
 
       switch (aasServerConfig.Auth)
       {
@@ -161,12 +169,14 @@ public class Parser
     string ret = "AAS Server configuration:";
     foreach (var aasServer in aasServerRepository.GetAll())
     {
-      ret += string.Format("{0}Name: {1}{0}IdLinkPrefix: {2}{0}AasEndpointPrefixe: {3}{0}Url: {4}{0}Auth: {5}{0}",
+      ret += string.Format("{0}Name: {1}{0}IdLinkPrefix: {2}{0}AasEndpointPrefixe: {3}{0}Version: {4}{0}Url: {5}{0}DiscoveryUrl: {6}{0}Auth: {7}{0}",
         Environment.NewLine,
         aasServer.Name,
         aasServer.IdLinkPrefix,
         aasServer.AasEndpointPrefixes!=null ? string.Join(", ", aasServer.AasEndpointPrefixes): "none",
+        aasServer.Version,
         aasServer.Url,
+        aasServer.DiscoveryUrl,
         aasServer.Auth != null ?  aasServer.Auth.GetType().ToString(): "none"
       );
     }

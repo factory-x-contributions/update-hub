@@ -1,3 +1,5 @@
+using UpdateHub.Service;
+
 namespace UpdateHub.Domain;
 
 // Interface
@@ -15,6 +17,8 @@ public class AasServer
   public string IdLinkPrefix { get; set; }
   public string[] AasEndpointPrefixes { get; set; }
   public string Url { get; set; }
+  public string DiscoveryUrl { get; set; }
+  public IAasService.AasVersion? Version { get; set; }
   public IAuth? Auth { get; set; }
 }
 
@@ -50,7 +54,6 @@ public class AasServerRepository : IAasServerRepository
     return null;
   }
 
-
   public AasServer GetByAasEndpointPrefix(string aasId)
   {
     if (string.IsNullOrEmpty(aasId))
@@ -73,25 +76,3 @@ public class AasServerRepository : IAasServerRepository
   }
 
 }
-
-/*
-      public class AasService
-         {
-      private IAasServerRepository _repository;
-        public AasService(IAasServerRepository repository)
-        {
-            _repository = repository;
-        }
-
-        public void AddAasServer(AasServer aasServer)
-        {
-            _repository.AddAasServer(aasServer);
-        }
-
-        public List<AasServer> GetAll()
-        {
-            return _repository.GetAll();
-        }
-
-       }
-       */

@@ -41,20 +41,10 @@ public static class UpdateEndpointsExt
           IAasService aasService
         ) =>
         {
-          // Is a feature flag set?
-          // HTTP header feature = true!
-          /* var FeatureFlag = false;
-          bool.TryParse(request.Headers["feature"].ToString().ToLower(), out FeatureFlag);
-          if (!FeatureFlag)
-            return Results.Problem("Feature Flag not set", statusCode: StatusCodes.Status501NotImplemented);
-          */
-
-          var featureFlagSkipParseAAS = false;
-          bool.TryParse(request.Headers["SKIP_PARSE_AAS"].ToString().ToLower(), out featureFlagSkipParseAAS);
           var encodedIdLink = Uri.UnescapeDataString(idLink);
           try
           {
-            return Results.Ok(aasService.GetSoftwareUpdate(encodedIdLink, featureFlagSkipParseAAS));
+            return Results.Ok(aasService.GetSoftwareUpdate(encodedIdLink, request));
           }
           catch (HttpProblemResponseException e)
           {

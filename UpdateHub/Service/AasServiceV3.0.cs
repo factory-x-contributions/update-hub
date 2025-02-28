@@ -86,7 +86,7 @@ public partial class AasService
                 if (shell.Content["idShort"].ToString().Contains("ProductChangeNotifications"))
                 {
                   var smId = shell.Content?["id"].ToString();
-                  Log.Debug(shell.Content?.ToString());
+
                   var pcn = _restApiService
                     .GetSubmodelsFromShell(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)),
                       Base64Url.EncodeToString(Encoding.UTF8.GetBytes(smId))).Result;
@@ -100,7 +100,7 @@ public partial class AasService
                 if (shell.Content["idShort"].ToString().Contains("SoftwareNameplate"))
                 {
                   var smId = shell.Content?["id"].ToString();
-                  //Log.Debug(shell.Content?.ToString());
+
                   var nameplate = _restApiService
                     .GetSubmodelsFromShell(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)),
                       Base64Url.EncodeToString(Encoding.UTF8.GetBytes(smId))).Result;

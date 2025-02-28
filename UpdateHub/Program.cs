@@ -214,6 +214,7 @@ updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new A
 
 var iahGroup = app.NewVersionedApi();
 updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(1.0)).AssetIdEndpoint();
+updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(2.0,"earlyaccess")).IdLinkV2Endpoint();
 
 app.MapControllers();
 app.Run();

@@ -186,5 +186,7 @@ app.UseSwaggerUI(c =>
 app.VersionEndpoint();
 var updateGroup = app.NewVersionedApi();
 updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(1.0)).IdLinkEndpoint();
+updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(2.0,"earlyaccess")).IdLinkV2Endpoint();
+
 app.MapControllers();
 app.Run();

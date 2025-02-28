@@ -41,13 +41,10 @@ public static class AssetEndpointsExt
           IInventoryService inventoryService
         ) =>
         {
-          //Second use AasClient with the IDLink to get update information
-          var featureFlagSkipParseAAS = false;
-          bool.TryParse(request.Headers["SKIP_PARSE_AAS"].ToString().ToLower(), out featureFlagSkipParseAAS);
           try
           {
             var idLink = inventoryService.GetIdLinkFromAsset(AssetId);
-            return Results.Ok(aasService.GetSoftwareUpdate(idLink, featureFlagSkipParseAAS));
+            return Results.Ok(aasService.GetSoftwareUpdate(idLink, request));
           }
           catch (HttpProblemResponseException e)
           {

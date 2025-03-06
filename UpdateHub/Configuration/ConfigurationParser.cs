@@ -18,7 +18,7 @@ public class Parser
 {
   public AasServerRepository aasServerRepository { get; set; } = null;
 
-  public async void ReadConfig(string configFilePath)
+  public ApplicationConfig ReadConfig(string configFilePath)
   {
     var deserializer = new DeserializerBuilder()
       .WithNamingConvention(HyphenatedNamingConvention.Instance)
@@ -99,7 +99,7 @@ public class Parser
     if (applicationConfig.aasServers == null|| applicationConfig.aasServers.Count == 0)
     {
       Log.Error("No AAS servers configured");
-      return;
+      return null;
     }
 
     foreach (var aasServerConfig in applicationConfig.aasServers)
@@ -162,6 +162,8 @@ public class Parser
 
       aasServerRepository.AddAasServer(aasServer);
     }
+
+    return applicationConfig;
   }
 
   public override string ToString()

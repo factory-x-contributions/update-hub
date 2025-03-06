@@ -7,16 +7,16 @@ namespace UpdateHub.Endpoints;
 using UpdateHub.Models;
 using Service;
 
-public static class UpdateV2EndpointsExt
+public static class UpdateIrs
 {
-  public static RouteGroupBuilder IdLinkV2Endpoint(this RouteGroupBuilder group)
+  public static RouteGroupBuilder IdLinkIrsEndpoint(this RouteGroupBuilder group)
   {
-    group.MapGet("/update/{assetIdBase64Encoded}",
+    group.MapGet("/irs/update/{idLinkBase64Encoded}",
         (
           HttpRequest request,
-          string assetIdBase64Encoded,
+          string idLinkBase64Encoded,
           IHttpClientFactory httpClientFactory,
-          IAasService aasService
+          IIrsService irsService
         ) =>
         {
           var encodedIdLink = "";
@@ -24,9 +24,7 @@ public static class UpdateV2EndpointsExt
           // TODO: Make input validation readable
           try
           {
-            encodedIdLink = Encoding.UTF8.GetString(Base64Url.DecodeFromUtf8(Encoding.UTF8.GetBytes(assetIdBase64Encoded)));
-
-          return Results.Ok(aasService.GetSoftwareUpdate(encodedIdLink, request));
+            return Results.Ok(irsService.GetSoftwareUpdate(idLinkBase64Encoded, request));
           }
           catch (HttpProblemResponseException e)
           {
@@ -40,9 +38,9 @@ public static class UpdateV2EndpointsExt
             return Results.Problem(e.Message, statusCode: StatusCodes.Status500InternalServerError);
           }
         })
-      .WithName("Update V2")
+      .WithName("Update IRS")
       .WithDescription("")
-      .WithSummary("Resolves a IdLink to PCNs")
+      .WithSummary("Resolves a IdLink to update information via IRS")
       .WithTags("SoftwareUpdate")
       .Produces<UpdateInformation[]>(StatusCodes.Status200OK)
       .ProducesProblem(StatusCodes.Status400BadRequest)

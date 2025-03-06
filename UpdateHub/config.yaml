@@ -39,3 +39,8 @@ aas-servers:
   url: https://sample-company-1.com/products/aas
   discovery-url: https://sample-company-1.com/products/aas/v3.0 # Only used for v30
   auth:
+
+irs:
+  url: https://irs-sample-server.de/irs
+  username: my-username
+  password: my-password

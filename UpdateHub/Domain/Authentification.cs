@@ -14,15 +14,28 @@ public interface IAuth
 }
 
 // Oauth2
-public class TokenEndpointRequest
+public abstract class TokenEndpointRequest
 {
   [AliasAs("grant_type")]
   public string GrantType { get; set; }
+}
+
+public class TokenEndpointRequestCredentialsFlow : TokenEndpointRequest
+{
   [AliasAs("client_id")]
   public string ClientId { get; set; }
 
   [AliasAs("client_secret")]
   public string ClientSecret { get; set; }
+}
+
+public class TokenEndpointRequestPasswordFlow : TokenEndpointRequest
+{
+  [AliasAs("username")]
+  public string Username { get; set; }
+
+  [AliasAs("password")]
+  public string Password { get; set; }
 }
 
 public class TokenResponse
@@ -66,7 +79,7 @@ public class Oauth2CredentialsFlow : IAuth
     HttpClient tokenHttpClient = new HttpClient();
     tokenHttpClient.BaseAddress = new Uri(TokenUrl);
     var _restApiService = RestService.For<IOauth2Token>(tokenHttpClient);
-    var token = _restApiService.GetAccessToken(new TokenEndpointRequest
+    var token = _restApiService.GetAccessToken(new TokenEndpointRequestCredentialsFlow
     {
       ClientId = ClientId,
       ClientSecret = ClientSecret,
@@ -83,6 +96,41 @@ public class Oauth2CredentialsFlow : IAuth
     return true;
   }
 }
+
+public class Oauth2PasswordFlow : IAuth
+{
+  public string Username { get; set; }
+  public string Password { get; set; }
+  public string TokenUrl { get; set; }
+
+  public bool Authenticate(HttpClient httpClient )
+  {
+    if (string.IsNullOrEmpty(Username) || string.IsNullOrEmpty(Password) || string.IsNullOrEmpty(TokenUrl))
+    {
+      return false;
+    }
+
+    HttpClient tokenHttpClient = new HttpClient();
+    tokenHttpClient.BaseAddress = new Uri(TokenUrl);
+    var _restApiService = RestService.For<IOauth2Token>(tokenHttpClient);
+    var token = _restApiService.GetAccessToken(new TokenEndpointRequestPasswordFlow
+    {
+      Username = Username,
+      Password = Password,
+      GrantType = "password"
+    }).Result;
+
+    if (!token.IsSuccessful || (token.StatusCode != HttpStatusCode.OK))
+    {
+      Log.Information("HTTP Status Code: " + token.StatusCode);
+      return false;
+    }
+
+    httpClient.DefaultRequestHeaders.Add("Authorization", string.Format("Bearer {0}",token.Content.AccessToken));
+    return true;
+  }
+}
+
 
 public class ApiKeyAuth : IAuth
 {

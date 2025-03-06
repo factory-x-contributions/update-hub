@@ -35,32 +35,33 @@ Log.Logger = new LoggerConfiguration()
 //  .WriteTo.Console()
 .WriteTo.Console(outputTemplate:
     "[{Timestamp:HH:mm:ss} {Level:u3}] {CorrelationId} {Message:lj}{NewLine}{Exception}")
-.WriteTo.Conditional(evt => (otlpEndpoint !=null), wt => wt.OpenTelemetry(options =>{
-    options.Endpoint = otlpEndpoint;
-    options.IncludedData =
-      IncludedData.SpanIdField
-      | IncludedData.TraceIdField;
-    options.ResourceAttributes = new Dictionary<string, object>
-    {
-      ["service.name"] = "UpdateHub", // Howto get the service name from the builder().
-      ["service.version"] = ServiceVersion.FullVersion(),
-      ["deployment.environment"] = ""
-    };
-  }))
+.WriteTo.Conditional(evt => (otlpEndpoint != null), wt => wt.OpenTelemetry(options =>
+{
+  options.Endpoint = otlpEndpoint;
+  options.IncludedData =
+    IncludedData.SpanIdField
+    | IncludedData.TraceIdField;
+  options.ResourceAttributes = new Dictionary<string, object>
+  {
+    ["service.name"] = "UpdateHub", // Howto get the service name from the builder().
+    ["service.version"] = ServiceVersion.FullVersion(),
+    ["deployment.environment"] = ""
+  };
+}))
   .MinimumLevel.ControlledBy(levelSwitch)
   //.Enrich.FromLogContext()
   //.Enrich.WithCorrelationId()
   // Adds the correlation id to the log and http headers. There is another middleware inside the service
   // which adds that as well, to decouple from the used logging library.
   .Enrich.WithCorrelationIdHeader(CorrelationIdMiddleware.CorrelationIdHeader)  // Add the correlation id to the log and http headers.
-  .Enrich.WithRequestHeader(TenantIdMiddleware.TenantIdHeader,"TenantId")
+  .Enrich.WithRequestHeader(TenantIdMiddleware.TenantIdHeader, "TenantId")
 .CreateLogger();
 levelSwitch.MinimumLevel = LogEventLevel.Information;
 
 Log.Information("Starting up. Version: {0}", ServiceVersion.FullVersion());
 
 var parser = new Parser();
-parser.ReadConfig(configFilePath);
+var applicationConfig = parser.ReadConfig(configFilePath);
 Log.Information(parser.ToString());
 
 // Configure web application
@@ -113,7 +114,7 @@ builder.Services.AddOpenTelemetry()
   {
     builder.AddAspNetCoreInstrumentation();
     builder.AddHttpClientInstrumentation();
-    if (otlpEndpoint !=null)
+    if (otlpEndpoint != null)
     {
       builder.AddOtlpExporter(otlpOptions =>
       {
@@ -129,8 +130,10 @@ builder.Services.AddOpenTelemetry()
     .AddService(serviceName: builder.Environment.ApplicationName, serviceVersion: ServiceVersion.FullVersion()));
 
 builder.Services.AddSingleton(parser.aasServerRepository);
+builder.Services.AddSingleton(applicationConfig);
 builder.Services.AddScoped<IAasService, AasService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IIrsService, IrsService>();
 builder.Services.AddProblemDetails();
 builder.Services.AddApiVersioning(options =>
   {
@@ -142,7 +145,7 @@ builder.Services.AddApiVersioning(options =>
       new HeaderApiVersionReader("X-Api-Version")
     );
   })
-  .AddMvc(options => {})
+  .AddMvc(options => { })
   .AddApiExplorer(options =>
   {
     options.GroupNameFormat = "'v'VVV";
@@ -166,16 +169,18 @@ builder.Services.AddHttpClient(string.Empty).ConfigureHttpClient(c =>
   c.DefaultRequestHeaders.Add("User-Agent", "Updatehub/" + ServiceVersion.SemanticVersion());
   c.Timeout = TimeSpan.FromSeconds(10);
 }).AddHeaderPropagation(
-  options =>{
-  options.Headers.Add("X-Correlation-Id");
-});
+  options =>
+  {
+    options.Headers.Add("X-Correlation-Id");
+  });
 
 builder.Services.AddRefitClient<IInventoryApi>().ConfigureHttpClient(c =>
 {
   c.BaseAddress = new Uri(inventoryEndpoint);
   c.DefaultRequestHeaders.Add("User-Agent", "Updatehub/" + ServiceVersion.SemanticVersion());
   c.Timeout = TimeSpan.FromSeconds(30);
-}).AddHeaderPropagation(options =>{
+}).AddHeaderPropagation(options =>
+{
   options.Headers.Add("Xo-Cdm-Tenant-Id");
   options.Headers.Add("Xo-Cdm-User-Id");
   options.Headers.Add("Authorization");
@@ -214,7 +219,8 @@ updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new A
 
 var iahGroup = app.NewVersionedApi();
 updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(1.0)).AssetIdEndpoint();
-updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(2.0,"earlyaccess")).IdLinkV2Endpoint();
+updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(2.0, "earlyaccess")).IdLinkV2Endpoint();
+updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(1.0)).IdLinkIrsEndpoint();
 
 app.MapControllers();
 app.Run();

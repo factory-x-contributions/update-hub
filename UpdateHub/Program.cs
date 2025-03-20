@@ -97,6 +97,13 @@ builder.Services.AddOpenTelemetry()
           0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10
         }
       });
+     if (otlpEndpoint != null)
+     {
+       builder.AddOtlpExporter(otlpOptions =>
+       {
+         otlpOptions.Endpoint = new Uri(otlpEndpoint);
+       });
+     }
     if (enableConsoleExporter)
     {
       builder.AddConsoleExporter();

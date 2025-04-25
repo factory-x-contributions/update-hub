@@ -85,6 +85,8 @@ builder.Services.AddOpenTelemetry()
     builder.AddPrometheusExporter();
     builder.AddAspNetCoreInstrumentation();
     builder.AddHttpClientInstrumentation();
+    builder.AddMeter("AASBroker", "1.0.0");
+    builder.AddMeter("IRSBroker", "1.0.0");
 
     builder.AddMeter("Microsoft.AspNetCore.Hosting",
       "Microsoft.AspNetCore.Server.Kestrel");

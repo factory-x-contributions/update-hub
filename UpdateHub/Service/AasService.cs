@@ -1,4 +1,6 @@
 using System.Buffers.Text;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -27,6 +29,11 @@ public partial class AasService : IAasService
 {
   private readonly AasServerRepository? _repository;
   private readonly IHttpClientFactory? _httpClientFactory;
+
+  private static readonly System.Diagnostics.Metrics.Meter meter = new Meter("AASBroker",
+    "1.0.0");
+  private static readonly Counter<int> AasFound = meter.CreateCounter<int>("aas_found", "counter", "Counts the number of found AAS shells");
+  private static readonly Counter<int> AasNotFound = meter.CreateCounter<int>("aas_not_found","counter", "Counts the number of not found AAS shells");
 
   public AasService(AasServerRepository aasServerRepository, IHttpClientFactory httpClientFactory)
   {
@@ -90,7 +97,10 @@ public partial class AasService : IAasService
         throw new HttpProblemResponseException(StatusCodes.Status422UnprocessableEntity, "Error while fetching IdLink from AAS server");
 
       if (shellIds.Content.Count == 0)
+      {
+        AasNotFound.Add(1, new KeyValuePair<string, object>("IdLink", idLink.ToString()));
         throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No shells found for given IdLink");
+      }
 
       Dictionary<string, JsonNode> receivedPcns = new();
       Dictionary<string, JsonNode> receivedSoftwareNameplates = new();
@@ -151,6 +161,7 @@ public partial class AasService : IAasService
       var update = new UpdateInformation("", "", "", "", softwareNameplateJsonObject, pcnJsonObject);
       updates.Add(update);
 
+      AasFound.Add(1, new KeyValuePair<string, object>("IdLink",idLink.ToString()));
       return updates;
     }
     catch (HttpProblemResponseException e)

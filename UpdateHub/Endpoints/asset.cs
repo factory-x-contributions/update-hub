@@ -1,4 +1,5 @@
 using System.Buffers.Text;
+using System.Diagnostics.Metrics;
 using System.Net;
 using System.Net.Mime;
 using System.Reflection.Metadata;
@@ -26,10 +27,10 @@ using UpdateHub.Models;
 using Clients;
 using Service;
 
-
 public static class AssetEndpointsExt
 {
-
+  private static readonly System.Diagnostics.Metrics.Meter meter = new Meter("IndustrialAssetHub", "1.0.0");
+  private static readonly Gauge<int> CounterAASVsIrs = meter.CreateGauge<int>("aas_vs_irs", "gauge", "Counts the number of found assets");
   public static RouteGroupBuilder AssetIdEndpoint(this RouteGroupBuilder group)
   {
     group.MapGet("/asset/{AssetId}",
@@ -38,13 +39,34 @@ public static class AssetEndpointsExt
           string AssetId,
           IHttpClientFactory httpClientFactory,
           IAasService aasService,
-          IInventoryService inventoryService
+          IInventoryService inventoryService,
+          IIrsService irsService
         ) =>
         {
           try
           {
             var idLink = inventoryService.GetIdLinkFromAsset(AssetId);
-            return Results.Ok(aasService.GetSoftwareUpdate(idLink, request));
+            var encodedIdLink = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(idLink));
+
+            var update = aasService.GetSoftwareUpdate(idLink, request);
+
+            var updateFromIrs = new List<UpdateInformation>();
+            try
+            {
+              updateFromIrs = irsService.GetSoftwareUpdate(encodedIdLink, request);
+              //return Results.Ok(updateFromIrs);
+            }
+            catch
+            {
+            }
+            finally
+            {
+              CounterAASVsIrs.Record(update.Count - updateFromIrs.Count,new KeyValuePair<string, object>("IdLink",idLink.ToString()));
+              Log.Debug("Update from AAS {0} / IRS: {1}", update.Count, updateFromIrs.Count);
+              Log.Debug((update?.Count == updateFromIrs?.Count).ToString());
+            }
+
+            return Results.Ok(update);
           }
           catch (HttpProblemResponseException e)
           {

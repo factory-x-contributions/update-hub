@@ -69,7 +69,7 @@ namespace UpdateHub.Endpoints
         var httpClient = httpClientFactory.CreateClient();
         if (aasServer.Auth != null)
         {
-          if (!aasServer.Auth.Authenticate(httpClient))
+          if (!aasServer.Auth.Authenticate(httpClient, httpClientFactory))
           {
             logger.LogError($"Error while executing authentication for AAS server '{aasServer.Name}'");
             //return Unauthorized(new { message = "Error while executing authentication" });
@@ -145,7 +145,7 @@ namespace UpdateHub.Endpoints
       // May, https://github.com/TurnerSoftware/CacheTower is an option
       if (aasServer.Auth != null)
       {
-        if (!aasServer.Auth.Authenticate(httpClient))
+        if (!aasServer.Auth.Authenticate(httpClient, httpClientFactory))
         {
           return this.Unauthorized("Error while executing authentication");
         }

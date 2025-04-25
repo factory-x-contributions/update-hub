@@ -54,7 +54,10 @@ public partial class AasService
         throw new HttpProblemResponseException(StatusCodes.Status422UnprocessableEntity, "Error while fetching IdLink from AAS server");
 
       if (shellIds.Content.Result.Count == 0)
+      {
+        AasNotFound.Add(1, new KeyValuePair<string, object>("IdLink", idLink.ToString()));
         throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No shells found for given IdLink");
+      }
 
       //
       // Shells
@@ -133,6 +136,7 @@ public partial class AasService
       var update = new UpdateInformation("", "", "", "", softwareNameplateJsonObject, pcnJsonObject);
       updates.Add(update);
 
+      AasFound.Add(1, new KeyValuePair<string, object>("IdLink",idLink.ToString()));
       return updates;
     }
     catch (HttpProblemResponseException e)

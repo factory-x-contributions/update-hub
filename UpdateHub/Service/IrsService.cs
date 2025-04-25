@@ -1,4 +1,5 @@
 using System.Buffers.Text;
+using System.Diagnostics.Metrics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -22,6 +23,12 @@ public partial class IrsService : IIrsService
 {
   private readonly ApplicationConfig? _applicationConfig;
   private readonly IHttpClientFactory? _httpClientFactory;
+
+  private static readonly System.Diagnostics.Metrics.Meter meter = new Meter("IRSBroker",
+    "1.0.0");
+  private static readonly Counter<int> AasFound = meter.CreateCounter<int>("aas_found", "counter", "Counts the number of found AAS shells");
+  private static readonly Counter<int> AasNotFound = meter.CreateCounter<int>("aas_not_found","counter", "Counts the number of not found AAS shells");
+
 
   public IrsService(ApplicationConfig applicationConfig, IHttpClientFactory httpClientFactory)
   {
@@ -56,7 +63,16 @@ public partial class IrsService : IIrsService
 
     try
     {
-      var receivedPcnSubmodels = _restApiService.GetSubmodelsFromIdLink(idLink, semanticIdPcnSubmodel).Result.Content;
+
+      var pcn = _restApiService.GetSubmodelsFromIdLink(idLink, semanticIdPcnSubmodel).Result;
+      if (pcn.StatusCode != HttpStatusCode.OK)
+      {
+
+        AasNotFound.Add(1, new KeyValuePair<string, object>("IdLink", idLink.ToString()));
+        throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No PCN found for given IdLink");
+      }
+
+      var receivedPcnSubmodels = pcn.Content;
       var receivedSoftwareNameplateSubmodels = _restApiService.GetSubmodelsFromIdLink(idLink, semanticIdSoftwareNameplateSubmodel).Result.Content;
 
       if (!featureFlagSkipParseAAS)
@@ -77,7 +93,7 @@ public partial class IrsService : IIrsService
       var updates = new List<UpdateInformation>();
       var update = new UpdateInformation("", "", "", "", softwareNameplateJsonObject, pcnJsonObject);
       updates.Add(update);
-
+      AasFound.Add(1, new KeyValuePair<string, object>("IdLink",idLink.ToString()));
       return updates;
     }
     catch (HttpProblemResponseException e)

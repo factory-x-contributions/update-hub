@@ -19,7 +19,7 @@ public partial class AasService
   {
     var httpClient = _httpClientFactory.CreateClient();
     if (aasServer.Auth != null)
-      if (!aasServer.Auth.Authenticate(httpClient))
+      if (!aasServer.Auth.Authenticate(httpClient, _httpClientFactory))
         throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication");
 
     httpClient.BaseAddress = new Uri(aasServer.Url);
@@ -28,7 +28,7 @@ public partial class AasService
     // Temporary, till Discovery Endpoints differs from other ones...
     var httpClientDiscovery = _httpClientFactory.CreateClient();
     if (aasServer.Auth != null)
-      if (!aasServer.Auth.Authenticate(httpClientDiscovery))
+      if (!aasServer.Auth.Authenticate(httpClientDiscovery, _httpClientFactory))
         throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication");
 
     // TODO: Flexible Discovery URL

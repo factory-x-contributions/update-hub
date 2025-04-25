@@ -72,7 +72,7 @@ public partial class AasService : IAasService
   {
     var httpClient = _httpClientFactory.CreateClient();
     if (aasServer.Auth != null)
-      if (!aasServer.Auth.Authenticate(httpClient))
+      if (!aasServer.Auth.Authenticate(httpClient,_httpClientFactory))
         throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication");
 
     httpClient.BaseAddress = new Uri(aasServer.Url);

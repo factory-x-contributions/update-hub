@@ -55,7 +55,7 @@ public partial class IrsService : IIrsService
     irsAuth.Password = _applicationConfig.irs.Password;
     irsAuth.TokenUrl = $"{_applicationConfig.irs.Url}/api/v1/token";
 
-    if (!irsAuth.Authenticate(httpClient))
+    if (!irsAuth.Authenticate(httpClient, _httpClientFactory))
       throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication with IRS");
 
     httpClient.BaseAddress = new Uri($"{_applicationConfig.irs.Url}/api/v1");

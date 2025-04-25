@@ -10,7 +10,7 @@ using Refit;
 
 public interface IAuth
 {
-  public bool Authenticate(HttpClient httpclient);
+  public bool Authenticate(HttpClient httpClient, IHttpClientFactory httpClientFactory);
 }
 
 // Oauth2
@@ -69,14 +69,14 @@ public class Oauth2CredentialsFlow : IAuth
   public string ClientSecret { get; set; }
   public string TokenUrl { get; set; }
 
-  public bool Authenticate(HttpClient httpClient )
+  public bool Authenticate(HttpClient httpClient, IHttpClientFactory httpClientFactory)
   {
     if (string.IsNullOrEmpty(ClientId) || string.IsNullOrEmpty(ClientSecret) || string.IsNullOrEmpty(TokenUrl))
     {
       return false;
     }
 
-    HttpClient tokenHttpClient = new HttpClient();
+    var tokenHttpClient = httpClientFactory.CreateClient();
     tokenHttpClient.BaseAddress = new Uri(TokenUrl);
     var _restApiService = RestService.For<IOauth2Token>(tokenHttpClient);
     var token = _restApiService.GetAccessToken(new TokenEndpointRequestCredentialsFlow
@@ -103,14 +103,14 @@ public class Oauth2PasswordFlow : IAuth
   public string Password { get; set; }
   public string TokenUrl { get; set; }
 
-  public bool Authenticate(HttpClient httpClient )
+  public bool Authenticate(HttpClient httpClient, IHttpClientFactory httpClientFactory)
   {
     if (string.IsNullOrEmpty(Username) || string.IsNullOrEmpty(Password) || string.IsNullOrEmpty(TokenUrl))
     {
       return false;
     }
 
-    HttpClient tokenHttpClient = new HttpClient();
+    var tokenHttpClient = httpClientFactory.CreateClient();
     tokenHttpClient.BaseAddress = new Uri(TokenUrl);
     var _restApiService = RestService.For<IOauth2Token>(tokenHttpClient);
     var token = _restApiService.GetAccessToken(new TokenEndpointRequestPasswordFlow
@@ -136,7 +136,7 @@ public class ApiKeyAuth : IAuth
 {
   public string ApiKey { get; set; }
 
-  public bool Authenticate(HttpClient httpclient)
+  public bool Authenticate(HttpClient httpclient, IHttpClientFactory httpClientFactory)
   {
     httpclient.DefaultRequestHeaders.Add("Authorization", ApiKey);
     return true;
@@ -147,7 +147,7 @@ public class BearerTokenAuth : IAuth
 {
   public string BearerToken { get; set; }
 
-  public bool Authenticate(HttpClient httpclient)
+  public bool Authenticate(HttpClient httpclient, IHttpClientFactory httpClientFactory)
   {
     httpclient.DefaultRequestHeaders.Add("Authorization", BearerToken);
     return true;
@@ -183,9 +183,10 @@ public class HilscherAuth : IAuth
   public string Secret { set; get; }
   public string LoginUrl {  set; get; }
 
-  public bool Authenticate(HttpClient httpClient)
+  public bool Authenticate(HttpClient httpClient, IHttpClientFactory httpClientFactory)
   {
-    HttpClient tokenHttpClient = new HttpClient();
+
+    var tokenHttpClient = httpClientFactory.CreateClient();
     tokenHttpClient.BaseAddress = new Uri(LoginUrl);
     var _restApiService = RestService.For<IHilscherLogin>(tokenHttpClient);
     var token = _restApiService.GetBearerToken(new HilscherLoginEndpointRequest

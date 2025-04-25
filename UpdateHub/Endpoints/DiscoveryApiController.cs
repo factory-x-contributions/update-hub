@@ -59,7 +59,7 @@ public class DiscoveryApiController : ControllerBase
     // May, https://github.com/TurnerSoftware/CacheTower is an option
     if (aasServer.Auth != null)
     {
-      if (!aasServer.Auth.Authenticate(httpClient))
+      if (!aasServer.Auth.Authenticate(httpClient, httpClientFactory))
       {
         return this.Unauthorized("Error while executing authentication");
       }

@@ -22,6 +22,7 @@ using Refit;
 using UpdateHub.Domain;
 using Asp.Versioning;
 using Microsoft.Extensions.Options;
+using Microsoft.Net.Http.Headers;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 
@@ -69,6 +70,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSerilog();
 builder.Services.AddHealthChecks();
 builder.Services.AddHealthChecks().AddCheck<HealthCheckConfiguration>("Configuration check");
+
+builder.Services.AddResponseCaching();
+//builder.Services.AddOutputCache();
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCorrelationIdGenerator();
 // Forward if header is available
@@ -109,13 +114,13 @@ builder.Services.AddOpenTelemetry()
           0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10
         }
       });
-     if (otlpEndpoint != null)
-     {
-       builder.AddOtlpExporter(otlpOptions =>
-       {
-         otlpOptions.Endpoint = new Uri(otlpEndpoint);
-       });
-     }
+    if (otlpEndpoint != null)
+    {
+      builder.AddOtlpExporter(otlpOptions =>
+      {
+        otlpOptions.Endpoint = new Uri(otlpEndpoint);
+      });
+    }
     if (enableConsoleExporter)
     {
       builder.AddConsoleExporter();
@@ -231,6 +236,23 @@ var iahGroup = app.NewVersionedApi();
 updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(1.0)).AssetIdEndpoint();
 updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(2.0, "earlyaccess")).IdLinkV2Endpoint();
 updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(1.0)).IdLinkIrsEndpoint();
+
+//app.UseOutputCache();
+app.UseResponseCaching();
+// Add middleware to set response cache headers
+app.Use(async (context, next) =>
+{
+  context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
+  {
+    Public = true,
+    MaxAge = TimeSpan.FromSeconds(300)
+  };
+
+  // Add Vary header for the User-Agent
+  context.Response.Headers[HeaderNames.Vary] = "User-Agent";
+
+  await next();
+});
 
 app.MapControllers();
 app.Run();

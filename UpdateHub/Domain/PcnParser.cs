@@ -1,3 +1,5 @@
+using System.Buffers.Text;
+using System.Text;
 using System.Text.Json.Nodes;
 using AasCore.Aas3_0;
 using Extensions;
@@ -92,7 +94,12 @@ namespace UpdateHub.Domain
                         }
                       }
 
-                      if (softwareNameplateSubmodel != null) {
+                      if (softwareNameplateSubmodel != null)
+                      {
+
+                        var id = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(softwareNameplateSubmodel.Id));
+
+
                         var smcSoftwareNameplateType = softwareNameplateSubmodel.FindFirstIdShortAs<SubmodelElementCollection>("SoftwareNameplateType");
                         var propInstallationUri = smcSoftwareNameplateType.FindFirstIdShortAs<Property>("InstallationUri");
                         var installationUri = propInstallationUri.ValueAsText();
@@ -102,7 +109,7 @@ namespace UpdateHub.Domain
                         var serializedSoftwareNameplate = AasJsonization.Serialize.ToJsonObject(softwareNameplateSubmodel);
                         var serializedRecord = AasJsonization.Serialize.ToJsonObject(record);
 
-                        var update = new UpdateInformation(date, version, installationUri, installationChecksum, serializedSoftwareNameplate, serializedRecord);
+                        var update = new UpdateInformation(id:id, date, version, installationUri, installationChecksum, serializedSoftwareNameplate, serializedRecord);
                         updates.Add(update);
                       }
                       else

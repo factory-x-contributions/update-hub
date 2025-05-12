@@ -133,7 +133,7 @@ public partial class AasService
         pcnJsonObject = l.Value.AsObject();
       }
       var updates = new List<UpdateInformation>();
-      var update = new UpdateInformation("", "", "", "", softwareNameplateJsonObject, pcnJsonObject);
+      var update = new UpdateInformation("","", "", "", "", softwareNameplateJsonObject, pcnJsonObject);
       updates.Add(update);
 
       AasFound.Add(1, new KeyValuePair<string, object>("IdLink",idLink.ToString()));

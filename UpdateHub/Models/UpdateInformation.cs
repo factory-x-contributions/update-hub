@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 namespace UpdateHub.Models
 {
     public record UpdateInformation(
+      String id,
       String date,
       String version,
       String installationUri,

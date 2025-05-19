@@ -97,9 +97,8 @@ namespace UpdateHub.Domain
                       if (softwareNameplateSubmodel != null)
                       {
 
-                        var id = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(softwareNameplateSubmodel.Id));
-
-
+                        var idBase64 = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(softwareNameplateSubmodel.Id));
+                        var id = softwareNameplateSubmodel.Id;
                         var smcSoftwareNameplateType = softwareNameplateSubmodel.FindFirstIdShortAs<SubmodelElementCollection>("SoftwareNameplateType");
                         var propInstallationUri = smcSoftwareNameplateType.FindFirstIdShortAs<Property>("InstallationUri");
                         var installationUri = propInstallationUri.ValueAsText();

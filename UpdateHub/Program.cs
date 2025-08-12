@@ -236,6 +236,9 @@ var iahGroup = app.NewVersionedApi();
 updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(1.0)).AssetIdEndpoint();
 updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(2.0, "earlyaccess")).IdLinkV2Endpoint();
 updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(1.0)).IdLinkIrsEndpoint();
+updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(1.0)).IdLinkEndpointHandover();
+updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(2.0, "earlyaccess")).IdLinkV2EndpointHandover();
+updateGroup.MapGroup("/v{version:apiVersion}").MapGroup("/").HasApiVersion(new ApiVersion(1.0)).IdLinkIrsEndpointHandover();
 
 //app.UseOutputCache();
 app.UseResponseCaching();

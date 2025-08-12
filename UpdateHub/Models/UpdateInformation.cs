@@ -14,5 +14,4 @@ namespace UpdateHub.Models
       JsonObject pcnRecord)
     {
     }
-
 }

@@ -40,7 +40,7 @@ public static class HandoverIrs
             })
           .WithName("Handover IRS")
           .WithDescription("")
-          .WithSummary("Resolves a IdLink to update information via IRS")
+          .WithSummary("Resolves a IdLink to Handover Documentation via IRS")
           .WithTags("HandoverDocumentation")
           .Produces<HandoverDocumentation[]>(StatusCodes.Status200OK)
           .ProducesProblem(StatusCodes.Status400BadRequest)

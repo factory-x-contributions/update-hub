@@ -37,6 +37,7 @@
 
             pre-commit
             shellcheck
+            csharpier
             nodePackages.prettier
             markdownlint-cli
           ];

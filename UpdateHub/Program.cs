@@ -160,6 +160,12 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1",
         Description = "Example service to communicate with the different IPS."
     });
+   c.SwaggerDoc("v2-earlyaccess", new OpenApiInfo
+  {
+    Title = "UpdateHub",
+    Version = "v2-earlyaccess",
+    Description = "Example service to communicate with the different IPS."
+  });
     // using System.Reflection;
     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
@@ -191,6 +197,7 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "UpdateHub v1");
+  c.SwaggerEndpoint("/swagger/v2-earlyaccess/swagger.json", "UpdateHub v2-earlyaccess");
     c.RoutePrefix = string.Empty; // Set Swagger UI at apps root
 });
 //app.UseExceptionHandler();

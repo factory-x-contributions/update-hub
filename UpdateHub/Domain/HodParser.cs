@@ -225,7 +225,13 @@ namespace UpdateHub.Domain
                     // specific for each shell, apparently legacy?
                     // digitalFilePath = $"{baseUrl}shells/{aasIdentifierEnc}/submodels/{submodelIdentifierEnc}/submodel-elements/{idShortPath}/attachment";
                     // new, go directly to submodel
-                    digitalFilePath = $"{baseUrl}submodels/{submodelIdentifierEnc}/submodel-elements/{idShortPath}/attachment";
+                    // Hilscher: hilscher-aas-server.com/submodels/...../attachment
+                    // Siemens (via IRS): irs.codewerk.com/submodels/....../attachment (funktioniert nicht, aber sollte)
+                    // Siemens (via IRS): aas.siemens.com/submodels/....../attachment (funktioniert, aber darf nicht)
+                    // irs/api/v1 (not working): https://demo.codewerk.de/irs/api/v1/docs#/
+                    // digitalFilePath = $"{baseUrl}submodels/{submodelIdentifierEnc}/submodel-elements/{idShortPath}/attachment";
+                    // irs/api/v2: https://demo.codewerk.de/irs/api/v2/docs#
+                    digitalFilePath = $"{baseUrl}assets/{aasIdentifierEnc}/submodels/{submodelIdentifierEnc}/submodel-elements/{idShortPath}/attachment";
                 }
 
 

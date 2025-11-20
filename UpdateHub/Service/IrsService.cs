@@ -51,16 +51,56 @@ public partial class IrsService : IIrsService
         var semanticIdPcnSubmodel = "0173-10029#01-XFB001#001";
 
         var httpClient = _httpClientFactory.CreateClient();
-        var irsAuth = new Oauth2PasswordFlow();
-        irsAuth.Username = _applicationConfig.irs.Username;
-        irsAuth.Password = _applicationConfig.irs.Password;
-        irsAuth.TokenUrl = $"{_applicationConfig.irs.Url}/api/v1/token";
 
-        if (!irsAuth.Authenticate(httpClient, _httpClientFactory))
-            throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication with IRS");
+        IAuth irsAuth;
+        switch (_applicationConfig.irs.ApiVersion)
+        {
+            case "v2": // irs api v2 : cliendid + secret
+            default:
+                var credAuth = new Oauth2CredentialsFlow();
+                credAuth.ClientId = _applicationConfig.irs.ClientId;
+                credAuth.ClientSecret = _applicationConfig.irs.ClientSecret;
+                credAuth.TokenUrl = _applicationConfig.irs.TokenUrl;
+                irsAuth = credAuth;
+                break;
+            case "v1": // irs api v1 : username + password + token
+                var pwAuth = new Oauth2PasswordFlow();
+                pwAuth.Username = _applicationConfig.irs.Username;
+                pwAuth.Password = _applicationConfig.irs.Password;
+                pwAuth.TokenUrl = $"{_applicationConfig.irs.Url}/api/v1/token";
+                irsAuth = pwAuth;
+                break;
+        }
 
-        httpClient.BaseAddress = new Uri($"{_applicationConfig.irs.Url}/api/v1");
-        var _restApiService = RestService.For<IIrsApi>(httpClient);
+        try
+        {
+            ((Oauth2CredentialsFlow)irsAuth).Authenticate(httpClient, _httpClientFactory);
+        }
+        catch
+        {
+            try
+            {
+                ((Oauth2PasswordFlow)irsAuth).Authenticate(httpClient, _httpClientFactory);
+            }
+            catch
+            {
+                throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication with IRS");
+            }
+        }
+
+        IIrsApiBase _restApiService;
+        switch (_applicationConfig.irs.ApiVersion)
+        {
+            case "v2": // irs api v2
+            default:
+                httpClient.BaseAddress = new Uri($"{_applicationConfig.irs.Url}/api/v2");
+                _restApiService = RestService.For<IIrsApi>(httpClient);
+                break;
+            case "v1": // irs api v1
+                httpClient.BaseAddress = new Uri($"{_applicationConfig.irs.Url}/api/v1");
+                _restApiService = RestService.For<IIrsApiV1>(httpClient);
+                break;
+        }
 
         try
         {
@@ -119,16 +159,57 @@ public partial class IrsService : IIrsService
                                                                                   // var semanticIdPcnSubmodel = "0173-10029#01-XFB001#001";
 
         var httpClient = _httpClientFactory.CreateClient();
-        var irsAuth = new Oauth2PasswordFlow();
-        irsAuth.Username = _applicationConfig.irs.Username;
-        irsAuth.Password = _applicationConfig.irs.Password;
-        irsAuth.TokenUrl = $"{_applicationConfig.irs.Url}/api/v1/token";
 
-        if (!irsAuth.Authenticate(httpClient, _httpClientFactory))
-            throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication with IRS");
+        IAuth irsAuth;
+        switch (_applicationConfig.irs.ApiVersion)
+        {
+            case "v2": // irs api v2 : cliendid + secret
+            default:
+                var credAuth = new Oauth2CredentialsFlow();
+                credAuth.ClientId = _applicationConfig.irs.ClientId;
+                credAuth.ClientSecret = _applicationConfig.irs.ClientSecret;
+                credAuth.TokenUrl = _applicationConfig.irs.TokenUrl;
+                irsAuth = credAuth;
+                break;
+            case "v1": // irs api v1 : username + password + token
+                var pwAuth = new Oauth2PasswordFlow();
+                pwAuth.Username = _applicationConfig.irs.Username;
+                pwAuth.Password = _applicationConfig.irs.Password;
+                pwAuth.TokenUrl = $"{_applicationConfig.irs.Url}/api/v1/token";
+                irsAuth = pwAuth;
+                break;
+        }
 
-        httpClient.BaseAddress = new Uri($"{_applicationConfig.irs.Url}/api/v1");
-        var _restApiService = RestService.For<IIrsApi>(httpClient);
+        try
+        {
+            ((Oauth2CredentialsFlow)irsAuth).Authenticate(httpClient, _httpClientFactory);
+        }
+        catch
+        {
+            try
+            {
+                ((Oauth2PasswordFlow)irsAuth).Authenticate(httpClient, _httpClientFactory);
+            }
+            catch
+            {
+                throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication with IRS");
+            }
+        }
+
+
+        IIrsApiBase _restApiService;
+        switch (_applicationConfig.irs.ApiVersion)
+        {
+            case "v2": // irs api v2
+            default:
+                httpClient.BaseAddress = new Uri($"{_applicationConfig.irs.Url}/api/v2");
+                _restApiService = RestService.For<IIrsApi>(httpClient);
+                break;
+            case "v1": // irs api v1
+                httpClient.BaseAddress = new Uri($"{_applicationConfig.irs.Url}/api/v1");
+                _restApiService = RestService.For<IIrsApiV1>(httpClient);
+                break;
+        }
 
         try
         {

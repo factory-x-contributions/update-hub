@@ -11,21 +11,35 @@ public static class UpdateAasql
 {
   public static RouteGroupBuilder AasqlEndpoints(this RouteGroupBuilder group)
   {
-    group.MapGet("/assql/update/{singleNameplateAttribute}",
+    group.MapPost("/assql/update",
         (
           HttpRequest request,
-          string singleNameplateAttribute,
+          AasQlQueryAttributes aasQLAttributes,
           IHttpClientFactory httpClientFactory,
-          IAasService aasService
+          IAasQlService aasQLService
         ) =>
-        {
-          Console.WriteLine(singleNameplateAttribute);
-          return Results.Ok("ASSQL_OK");
+        {         
+          try
+          {
+            return Results.Ok(aasQLService.GetSoftwareUpdate(aasQLAttributes, request));
+          }
+          catch (HttpProblemResponseException e)
+          {
+            return Results.Problem(e.Value.ToString(), statusCode: e.StatusCode);
+          }
+          // Unknown exception handled by dotnet itself, with
+          // UseExceptionHandler and UseDeveloperExceptionPage
+          catch (Exception e)
+          {
+            Log.Information(e.ToString());
+            return Results.Problem(e.Message, statusCode: StatusCodes.Status500InternalServerError);
+          }
         })
       .WithName("ASSQL")
-      .WithDescription("")
-      .WithSummary("Resolves one nameplate attribute to PCNs")
+      .WithDescription("Execute AASql query to find software updates based on nameplate attributes")
+      .WithSummary("Resolves nameplate attributes to PCNs using AASql")
       .WithTags("SoftwareUpdate")
+      .Accepts<AasQlQueryAttributes>("application/json")
       .Produces<UpdateInformation[]>(StatusCodes.Status200OK)
       .ProducesProblem(StatusCodes.Status400BadRequest)
       .ProducesProblem(StatusCodes.Status422UnprocessableEntity)

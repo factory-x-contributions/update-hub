@@ -56,28 +56,49 @@ public partial class AasQlService : IAasQlService
             // Create AASql PCN query string using the provided attributes
             var aasqlSNPQuery = BuildAasqlSNPQuery(aasQLAttr);
             
+            Log.Information("Executing AASql PCN Query: {Query}", aasqlPCNQuery);
+            Log.Information("Executing AASql SNP Query: {Query}", aasqlSNPQuery);
+            
             var httpClient = _httpClientFactory.CreateClient();
             if (aasServer.Auth != null)
                 if (!aasServer.Auth.Authenticate(httpClient, _httpClientFactory))
                     throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication");
 
             httpClient.BaseAddress = new Uri(aasServer.Url);
+            
+            // // Configure Refit with explicit JSON serialization settings
+            // var refitSettings = new RefitSettings
+            // {
+            //     ContentSerializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions
+            //     {
+            //         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            //         WriteIndented = false
+            //     })
+            // };
+            //var aasqlClient = RestService.For<IAasQLApi>(httpClient, refitSettings);
+
             var aasqlClient = RestService.For<IAasQLApi>(httpClient);
 
             // Execute AASql query
-            var queryPCNResponse = aasqlClient.QuerySubmodels(new AasQLQuery(aasqlPCNQuery)).Result;
-            var querySNPResponse = aasqlClient.QuerySubmodels(new AasQLQuery(aasqlSNPQuery)).Result;
+            var queryPCNResponse = aasqlClient.QuerySubmodels(aasqlPCNQuery).Result;
+            var querySNPResponse = aasqlClient.QuerySubmodels(aasqlSNPQuery).Result;
             
             if (!queryPCNResponse.IsSuccessful)
                 throw new HttpProblemResponseException(StatusCodes.Status422UnprocessableEntity, "Error while executing AASql PCN query");
            if (!querySNPResponse.IsSuccessful)
                 throw new HttpProblemResponseException(StatusCodes.Status422UnprocessableEntity, "Error while executing AASql SNP query");
             
-            Dictionary<string, JsonNode> receivedPcns = new();
-            receivedPcns[queryPCNResponse.Content["id"].AsValue().ToString()] = queryPCNResponse.Content;
+            var pcnResult = queryPCNResponse.Content;
+            var snpResult = querySNPResponse.Content;
+            
+            if (pcnResult == null)
+                throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No PCN results found for AASql query");
+                
+            if (snpResult == null)
+                throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No SNP results found for AASql query");
 
+            Dictionary<string, JsonNode> receivedPcns = new();
             Dictionary<string, JsonNode> receivedSnps = new();
-            receivedSnps[querySNPResponse.Content["id"].AsValue().ToString()] = querySNPResponse.Content;
   
             if (!featureFlagSkipParseAAS)
                 return PcnParser.parsePcnAndSoftwareNameplateSubmodels(receivedPcns.Values.ToList(),

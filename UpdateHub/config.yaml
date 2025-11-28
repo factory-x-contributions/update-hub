@@ -13,7 +13,7 @@ aas-servers:
 
 - name: SampleAASQLServer
   id-link-prefix: https://i.siemens.com/
-  url: http://192.168.56.101:5001/
+  url: http://192.168.56.101:5002/
   auth:
 
 - name: SampleAasServerOAuth2

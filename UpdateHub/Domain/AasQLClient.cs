@@ -30,7 +30,7 @@ public interface IAasQLApi
     /// <returns>Query result with submodel data</returns>
     [Post("/query/submodels")]
     [Headers("Content-Type: application/json")]
-    Task<ApiResponse<JsonNode>> QuerySubmodels([Body] AasQLQuery aasqlquery);
+    Task<ApiResponse<JsonNode>> QuerySubmodels([Body] JsonNode aasqlquery);
 }
 
 /// <summary>
@@ -43,7 +43,7 @@ public class AasQLQuery
     /// </summary>
     [AliasAs("aasqlquery")]
     public string Query { get; set; }
-  
+
     public AasQLQuery(string query)
     {
         Query = query;

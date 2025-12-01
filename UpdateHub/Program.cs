@@ -134,6 +134,7 @@ builder.Services.AddSingleton(parser.aasServerRepository);
 builder.Services.AddSingleton(applicationConfig);
 builder.Services.AddScoped<IAasService, AasService>();
 builder.Services.AddScoped<IIrsService, IrsService>();
+builder.Services.AddScoped<IAasQlService, AasQlService>();
 builder.Services.AddProblemDetails();
 builder.Services.AddApiVersioning(options =>
   {

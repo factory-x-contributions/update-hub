@@ -1,7 +1,11 @@
+using System;
+using System.IO;
+using System.Collections.Generic;
 using System.Diagnostics.Metrics;
-using System.Text;
-using System.Text.Json;
+using System.Linq;
 using System.Text.Json.Nodes;
+using Microsoft.AspNetCore.Http;
+using Refit;
 using Serilog;
 using UpdateHub.Domain;
 using UpdateHub.Endpoints;
@@ -54,80 +58,95 @@ public partial class AasQlService : IAasQlService
             // Build AASQL queries (JSON with top-level "Query")
             var aasqlPCNQuery = BuildAasqlPcnQuery(aasQLAttr);
             var aasqlSNPQuery = BuildAasqlSNPQuery(aasQLAttr);
+            Log.Debug("AASQL PCN request body: {Body}", aasqlPCNQuery);
+            Log.Debug("AASQL SNP request body: {Body}", aasqlSNPQuery);
+
+            // Parse them into JsonNode so Refit sends a proper JSON object
+            var pcnNode = JsonNode.Parse(aasqlPCNQuery)!;
+            var snpNode = JsonNode.Parse(aasqlSNPQuery)!;
 
             var httpClient = _httpClientFactory.CreateClient();
-
             if (aasServer.Auth != null)
             {
                 if (!aasServer.Auth.Authenticate(httpClient, _httpClientFactory))
-                    throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized,
+                    throw new HttpProblemResponseException(
+                        StatusCodes.Status401Unauthorized,
                         "Error while executing authentication");
             }
 
             httpClient.BaseAddress = new Uri(aasServer.Url);
+            var aasqlClient = RestService.For<IAasQLApi>(httpClient);
 
-            // ---- PCN query ----
-            const string path = "/query/submodels"; // AAS server endpoint
-
-            var pcnContent = new StringContent(aasqlPCNQuery, Encoding.UTF8, "application/json");
-            Log.Debug("AASQL PCN request body: {Body}", aasqlPCNQuery);
-
-            var pcnResponse = httpClient.PostAsync(path, pcnContent).Result;
-            var pcnResponseText = pcnResponse.Content.ReadAsStringAsync().Result;
-
+            //Execute AASql query
+            var queryPCNResponse = aasqlClient.QuerySubmodels(pcnNode).Result;
             Log.Debug("AASQL PCN raw response: {Status} {Text}",
-                pcnResponse.StatusCode, pcnResponseText);
+                queryPCNResponse.StatusCode,
+                queryPCNResponse.Content?.ToJsonString());
 
-            if (!pcnResponse.IsSuccessStatusCode)
+            if (!queryPCNResponse.IsSuccessStatusCode || queryPCNResponse.Content is null)
             {
                 throw new HttpProblemResponseException(
                     StatusCodes.Status422UnprocessableEntity,
-                    $"Error while executing AASql PCN query: {pcnResponse.StatusCode} {pcnResponseText}"
-                );
+                    $"Error while executing AASql PCN query: {queryPCNResponse.StatusCode} {queryPCNResponse.Error?.Content}");
             }
 
-            var pcnJson = JsonNode.Parse(pcnResponseText)!;
-
-            // ---- SNP query ----
-            var snpContent = new StringContent(aasqlSNPQuery, Encoding.UTF8, "application/json");
-            Log.Debug("AASQL SNP request body: {Body}", aasqlSNPQuery);
-
-            var snpResponse = httpClient.PostAsync(path, snpContent).Result;
-            var snpResponseText = snpResponse.Content.ReadAsStringAsync().Result;
-
+            // ---------- SNP ----------
+            var querySNPResponse = aasqlClient.QuerySubmodels(snpNode).Result;
             Log.Debug("AASQL SNP raw response: {Status} {Text}",
-                snpResponse.StatusCode, snpResponseText);
+                querySNPResponse.StatusCode,
+                querySNPResponse.Content?.ToJsonString());
 
-            if (!snpResponse.IsSuccessStatusCode)
+            if (!querySNPResponse.IsSuccessStatusCode || querySNPResponse.Content is null)
             {
                 throw new HttpProblemResponseException(
                     StatusCodes.Status422UnprocessableEntity,
-                    $"Error while executing AASql SNP query: {snpResponse.StatusCode} {snpResponseText}"
-                );
+                    $"Error while executing AASql SNP query: {querySNPResponse.StatusCode} {querySNPResponse.Error?.Content}");
             }
 
-            var snpJson = JsonNode.Parse(snpResponseText)!;
+            var pcnJson = queryPCNResponse.Content;
+            var snpJson = querySNPResponse.Content;
+            List<UpdateInformation>? parsedUpdates = null;
 
-            // Use parse pipeline if enabled
             if (!featureFlagSkipParseAAS)
             {
-                // PcnParser expects lists of submodel JsonNodes
-                var pcnList = new List<JsonNode> { pcnJson };
-                var snpList = new List<JsonNode> { snpJson };
+                try
+                {
+                    var pcnSubmodels = ExtractSubmodelsFromResult(pcnJson);
+                    var snpSubmodels = ExtractSubmodelsFromResult(snpJson);
 
-                return PcnParser.parsePcnAndSoftwareNameplateSubmodels(pcnList, snpList);
+                    parsedUpdates = PcnParser.parsePcnAndSoftwareNameplateSubmodels(
+                        pcnSubmodels,
+                        snpSubmodels
+                    );
+                }
+                // aaspe-common missing => fall back instead of 500
+                catch (FileNotFoundException ex) when (
+                    (ex.FileName ?? string.Empty)
+                        .Contains("aaspe-common", StringComparison.OrdinalIgnoreCase)
+                )
+                {
+                    Log.Warning(ex,
+                        "aaspe-common not found. Skipping AAS parsing and falling back to raw JSON result.");
+                }
             }
 
-            // ---- Fallback (arm64 AAS library not available) ----
-            var pcnJsonObject = pcnJson as JsonObject ?? new JsonObject();
-            var softwareNameplateJsonObject = snpJson as JsonObject ?? new JsonObject();
+            if (parsedUpdates != null)
+            {
+                return parsedUpdates;
+            }
+
+            // ---------- Fallback: use raw JSON submodels ----------
+            var firstPcn = ExtractSubmodelsFromResult(pcnJson).FirstOrDefault() as JsonObject
+                           ?? new JsonObject();
+            var firstSnp = ExtractSubmodelsFromResult(snpJson).FirstOrDefault() as JsonObject
+                           ?? new JsonObject();
 
             var updates = new List<UpdateInformation>
             {
                 new(
                     "", "", "", "", "",
-                    softwareNameplateJsonObject,
-                    pcnJsonObject
+                    firstSnp,
+                    firstPcn
                 )
             };
 
@@ -148,7 +167,8 @@ public partial class AasQlService : IAasQlService
     {
         try
         {
-            // TODO: implement similar query for handover documentation
+            // Similar implementation for handover documentation
+            // For now, return empty list
             return new List<HandoverDocumentation>();
         }
         catch (Exception e)
@@ -203,7 +223,7 @@ public partial class AasQlService : IAasQlService
 
     private string BuildAasqlSNPQuery(AasQlQueryAttributes attributes)
     {
-        // You can refine this if SNP query should differ from PCN one
+        // Build AASql query based on provided attributes
         var query = $@"{{
   ""Query"": {{
     ""$condition"": {{
@@ -244,19 +264,35 @@ public partial class AasQlService : IAasQlService
         return query;
     }
 
+
+    /// Helper to extract the "result" array (submodels) from the AASQL response.
+    private static List<JsonNode> ExtractSubmodelsFromResult(JsonNode root)
+    {
+        if (root?["result"] is JsonArray arr)
+        {
+            return arr.ToList();
+        }
+
+        return new List<JsonNode>();
+    }
+
     private List<UpdateInformation> ParseQueryResults(JsonNode results)
     {
         var updateList = new List<UpdateInformation>();
-
-        if (results is JsonArray arr)
+        
+        // Parse the JSON results and convert to UpdateInformation objects
+        // This is a placeholder implementation
+        if (results?.AsArray() != null)
         {
-            foreach (var item in arr)
+            foreach (var item in results.AsArray())
             {
+                // Parse individual result items
+                // For now, create empty UpdateInformation objects
                 var update = new UpdateInformation("", "", "", "", "", new JsonObject(), new JsonObject());
                 updateList.Add(update);
             }
         }
-
+        
         return updateList;
     }
 }

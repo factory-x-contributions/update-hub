@@ -55,15 +55,12 @@ public partial class AasQlService : IAasQlService
             Log.Information("[{Method}] AasQLAttributes: {Attributes} => AAS Server: {AasServer}",
                 nameof(GetSoftwareUpdate), aasQLAttr, aasServer.Name);
 
-            // Build AASQL queries (JSON with top-level "Query")
-            var aasqlPCNQuery = BuildAasqlPcnQuery(aasQLAttr);
-            var aasqlSNPQuery = BuildAasqlSNPQuery(aasQLAttr);
-            Log.Debug("AASQL PCN request body: {Body}", aasqlPCNQuery);
-            Log.Debug("AASQL SNP request body: {Body}", aasqlSNPQuery);
+            // Build AASQL query that returns AAS shells (id + shell info)
+            var aasqlShellQuery = BuildAasqlShellQuery(aasQLAttr);
+            Log.Debug("AASQL Shell request body: {Body}", aasqlShellQuery);
 
-            // Parse them into JsonNode so Refit sends a proper JSON object
-            var pcnNode = JsonNode.Parse(aasqlPCNQuery)!;
-            var snpNode = JsonNode.Parse(aasqlSNPQuery)!;
+            // Parse JSON so Refit sends an actual JSON object body
+            var shellNode = JsonNode.Parse(aasqlShellQuery)!;
 
             var httpClient = _httpClientFactory.CreateClient();
             if (aasServer.Auth != null)
@@ -76,81 +73,49 @@ public partial class AasQlService : IAasQlService
 
             httpClient.BaseAddress = new Uri(aasServer.Url);
             var aasqlClient = RestService.For<IAasQLApi>(httpClient);
+            var queryShellResponse = aasqlClient.QueryShells(shellNode).Result;
+            Log.Debug(
+                "AASQL Shell raw response: {Status} {Text}",
+                queryShellResponse.StatusCode,
+                queryShellResponse.Content?.ToJsonString()
+            );
 
-            //Execute AASql query
-            var queryPCNResponse = aasqlClient.QuerySubmodels(pcnNode).Result;
-            Log.Debug("AASQL PCN raw response: {Status} {Text}",
-                queryPCNResponse.StatusCode,
-                queryPCNResponse.Content?.ToJsonString());
-
-            if (!queryPCNResponse.IsSuccessStatusCode || queryPCNResponse.Content is null)
+            if (!queryShellResponse.IsSuccessStatusCode || queryShellResponse.Content is null)
             {
                 throw new HttpProblemResponseException(
                     StatusCodes.Status422UnprocessableEntity,
-                    $"Error while executing AASql PCN query: {queryPCNResponse.StatusCode} {queryPCNResponse.Error?.Content}");
+                    $"Error while executing AASql shell query: {queryShellResponse.StatusCode} {queryShellResponse.Error?.Content}");
             }
 
-            // ---------- SNP ----------
-            var querySNPResponse = aasqlClient.QuerySubmodels(snpNode).Result;
-            Log.Debug("AASQL SNP raw response: {Status} {Text}",
-                querySNPResponse.StatusCode,
-                querySNPResponse.Content?.ToJsonString());
 
-            if (!querySNPResponse.IsSuccessStatusCode || querySNPResponse.Content is null)
+            var shellJson = queryShellResponse.Content;
+            var shells = ExtractResultArray(shellJson);
+            if (shells.Count == 0)
             {
-                throw new HttpProblemResponseException(
-                    StatusCodes.Status422UnprocessableEntity,
-                    $"Error while executing AASql SNP query: {querySNPResponse.StatusCode} {querySNPResponse.Error?.Content}");
+                AasNotFound.Add(1, new KeyValuePair<string, object?>("method", "GetSoftwareUpdate"));
+                // No matching asset – return empty list
+                return new List<UpdateInformation>();
             }
-
-            var pcnJson = queryPCNResponse.Content;
-            var snpJson = querySNPResponse.Content;
-            List<UpdateInformation>? parsedUpdates = null;
-
-            if (!featureFlagSkipParseAAS)
-            {
-                try
-                {
-                    var pcnSubmodels = ExtractSubmodelsFromResult(pcnJson);
-                    var snpSubmodels = ExtractSubmodelsFromResult(snpJson);
-
-                    parsedUpdates = PcnParser.parsePcnAndSoftwareNameplateSubmodels(
-                        pcnSubmodels,
-                        snpSubmodels
-                    );
-                }
-                // aaspe-common missing => fall back instead of 500
-                catch (FileNotFoundException ex) when (
-                    (ex.FileName ?? string.Empty)
-                        .Contains("aaspe-common", StringComparison.OrdinalIgnoreCase)
-                )
-                {
-                    Log.Warning(ex,
-                        "aaspe-common not found. Skipping AAS parsing and falling back to raw JSON result.");
-                }
-            }
-
-            if (parsedUpdates != null)
-            {
-                return parsedUpdates;
-            }
-
-            // ---------- Fallback: use raw JSON submodels ----------
-            var firstPcn = ExtractSubmodelsFromResult(pcnJson).FirstOrDefault() as JsonObject
-                           ?? new JsonObject();
-            var firstSnp = ExtractSubmodelsFromResult(snpJson).FirstOrDefault() as JsonObject
-                           ?? new JsonObject();
+            AasFound.Add(1, new KeyValuePair<string, object?>("method", "GetSoftwareUpdate"));
+            var firstShell = shells[0] as JsonObject ?? new JsonObject();
+            var assetId = firstShell["id"]?.GetValue<string>() ?? string.Empty;
+            Log.Information("Resolved AAS shell id: {AssetId}", assetId);
 
             var updates = new List<UpdateInformation>
             {
                 new(
-                    "", "", "", "", "",
-                    firstSnp,
-                    firstPcn
+                    assetId,           
+                    "",                // date
+                    "",                // version
+                    "",                // installationUri
+                    "",                // installationChecksum
+                    firstShell,        // full shell JSON here (softwareNameplateSubmodel slot)
+                    new JsonObject()   // empty PCN record (no PCN here)
                 )
             };
 
             return updates;
+
         }
         catch (HttpProblemResponseException)
         {
@@ -178,9 +143,9 @@ public partial class AasQlService : IAasQlService
         }
     }
 
-    private string BuildAasqlPcnQuery(AasQlQueryAttributes attributes)
+    private string BuildAasqlShellQuery(AasQlQueryAttributes attributes)
     {
-        // The Query returns the AAS Global ID and other information based on submodel attributes
+        // This matches the curl you posted (extended with attributes)
         var query = $@"{{
   ""Query"": {{
     ""$select"": ""id"",
@@ -188,75 +153,33 @@ public partial class AasQlService : IAasQlService
       ""$and"": [
         {{
           ""$eq"": [
-            {{ ""$field"": ""$sm#idShort"" }},
-            {{ ""$strVal"": ""ProductChangeNotifications"" }}
+            {{ ""$field"": ""$sme.ManufacturerName#value"" }},
+            {{ ""$strVal"": ""{attributes.ManufacturerName}"" }}
           ]
         }},
         {{
-          ""$or"": [
-            {{
-              ""$contains"": [
-                {{ ""$field"": ""$sme.ManufacturerName#value"" }},
-                {{ ""$strVal"": ""{attributes.ManufacturerName}"" }}
-              ]
-            }},
-            {{
-              ""$contains"": [
-                {{ ""$field"": ""$sme.OrderCodeOfManufacturer#value"" }},
-                {{ ""$strVal"": ""{attributes.OrderCodeOfManufacturer}"" }}
-              ]
-            }},
-            {{
-              ""$contains"": [
-                {{ ""$field"": ""$sme.ManufacturerProductType#value"" }},
-                {{ ""$strVal"": ""{attributes.ManufacturerProductType}"" }}
-              ]
-            }}
+          ""$eq"": [
+            {{ ""$field"": ""$sme.OrderCodeOfManufacturer#value"" }},
+            {{ ""$strVal"": ""{attributes.OrderCodeOfManufacturer}"" }}
           ]
-        }}
-      ]
-    }}
-  }}
-}}";
-
-        return query;
-    }
-
-    private string BuildAasqlSNPQuery(AasQlQueryAttributes attributes)
-    {
-        // The Query returns the AAS Global ID and other information based on Software Nameplate submodel attributes
-        var query = $@"{{
-  ""Query"": {{
-    ""$select"": ""id"",
-    ""$condition"": {{
-      ""$and"": [
+        }},
+        {{
+          ""$eq"": [
+            {{ ""$field"": ""$sme.ManufacturerProductType#value"" }},
+            {{ ""$strVal"": ""{attributes.ManufacturerProductType}"" }}
+          ]
+        }},
+        {{
+          ""$eq"": [
+            {{ ""$field"": ""$sme.UriOfTheProduct#value"" }},
+            {{ ""$strVal"": ""{attributes.UriOfTheProduct}"" }}
+          ]
+        }},
         {{
           ""$eq"": [
             {{ ""$field"": ""$sm#idShort"" }},
             {{ ""$strVal"": ""Nameplate"" }}
           ]
-        }},
-        {{
-          ""$or"": [
-            {{
-              ""$contains"": [
-                {{ ""$field"": ""$sme.ManufacturerName#value"" }},
-                {{ ""$strVal"": ""{attributes.ManufacturerName}"" }}
-              ]
-            }},
-            {{
-              ""$contains"": [
-                {{ ""$field"": ""$sme.OrderCodeOfManufacturer#value"" }},
-                {{ ""$strVal"": ""{attributes.OrderCodeOfManufacturer}"" }}
-              ]
-            }},
-            {{
-              ""$contains"": [
-                {{ ""$field"": ""$sme.ManufacturerProductType#value"" }},
-                {{ ""$strVal"": ""{attributes.ManufacturerProductType}"" }}
-              ]
-            }}
-          ]
         }}
       ]
     }}
@@ -267,34 +190,15 @@ public partial class AasQlService : IAasQlService
     }
 
 
-    /// Helper to extract the "result" array (submodels) from the AASQL response.
-    private static List<JsonNode> ExtractSubmodelsFromResult(JsonNode root)
+    /// Helper to extract the "result" array (shells) from the AASQL response.
+    private static List<JsonNode> ExtractResultArray(JsonNode root)
     {
         if (root?["result"] is JsonArray arr)
         {
-            return arr.ToList();
+            // List<JsonNode?> → List<JsonNode>
+            return arr.Where(n => n is not null).Cast<JsonNode>().ToList();
         }
 
         return new List<JsonNode>();
-    }
-
-    private List<UpdateInformation> ParseQueryResults(JsonNode results)
-    {
-        var updateList = new List<UpdateInformation>();
-        
-        // Parse the JSON results and convert to UpdateInformation objects
-        // This is a placeholder implementation
-        if (results?.AsArray() != null)
-        {
-            foreach (var item in results.AsArray())
-            {
-                // Parse individual result items
-                // For now, create empty UpdateInformation objects
-                var update = new UpdateInformation("", "", "", "", "", new JsonObject(), new JsonObject());
-                updateList.Add(update);
-            }
-        }
-        
-        return updateList;
     }
 }

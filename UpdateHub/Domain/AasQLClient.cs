@@ -28,7 +28,7 @@ public interface IAasQLApi
     /// </summary>
     /// <param name="aasqlquery">AASql query for submodel search</param>
     /// <returns>Query result with submodel data</returns>
-    [Post("/query/submodels")]
+    [Post("/query/shells")]
     [Headers("Content-Type: application/json")]
     Task<ApiResponse<JsonNode>> QuerySubmodels([Body] JsonNode aasqlquery);
 }

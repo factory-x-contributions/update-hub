@@ -28,9 +28,18 @@ public interface IAasQLApi
     /// </summary>
     /// <param name="aasqlquery">AASql query for submodel search</param>
     /// <returns>Query result with submodel data</returns>
-    [Post("/query/shells")]
+    [Post("/query/submodels")]
     [Headers("Content-Type: application/json")]
     Task<ApiResponse<JsonNode>> QuerySubmodels([Body] JsonNode aasqlquery);
+
+    /// <summary>
+    /// Execute AASql query for AAS shell lookup
+    /// </summary>
+    /// <param name="aasqlquery">AASql query for shell search</param>
+    /// <returns>Query result with AAS shell data</returns>
+    [Post("/query/shells")]
+    [Headers("Content-Type: application/json")]
+    Task<ApiResponse<JsonNode>> QueryShells([Body] JsonNode aasqlquery);
 }
 
 /// <summary>

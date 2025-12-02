@@ -1,18 +1,22 @@
+using System;
+using System.IO;
+using System.Collections.Generic;
 using System.Diagnostics.Metrics;
-using System.Text.Json;
+using System.Linq;
 using System.Text.Json.Nodes;
+using Microsoft.AspNetCore.Http;
 using Refit;
 using Serilog;
 using UpdateHub.Domain;
-using UpdateHub.Models;
 using UpdateHub.Endpoints;
+using UpdateHub.Models;
 
 namespace UpdateHub.Service;
 
 public interface IAasQlService
 {
-    public List<UpdateInformation> GetSoftwareUpdate(AasQlQueryAttributes aasQLAttr, HttpRequest request);
-    public List<HandoverDocumentation> GetHandoverDocumentation(AasQlQueryAttributes aasQLAttr, HttpRequest request);
+    List<UpdateInformation> GetSoftwareUpdate(AasQlQueryAttributes aasQLAttr, HttpRequest request);
+    List<HandoverDocumentation> GetHandoverDocumentation(AasQlQueryAttributes aasQLAttr, HttpRequest request);
 }
 
 public partial class AasQlService : IAasQlService
@@ -20,10 +24,11 @@ public partial class AasQlService : IAasQlService
     private readonly AasServerRepository _repository;
     private readonly IHttpClientFactory _httpClientFactory;
 
-     private static readonly System.Diagnostics.Metrics.Meter meter = new Meter("AASBroker",
-      "1.0.0");
-    private static readonly Counter<int> AasFound = meter.CreateCounter<int>("aas_found", "counter", "Counts the number of found AAS shells");
-    private static readonly Counter<int> AasNotFound = meter.CreateCounter<int>("aas_not_found", "counter", "Counts the number of not found AAS shells");
+    private static readonly Meter meter = new("AASBroker", "1.0.0");
+    private static readonly Counter<int> AasFound =
+        meter.CreateCounter<int>("aas_found", "counter", "Counts the number of found AAS shells");
+    private static readonly Counter<int> AasNotFound =
+        meter.CreateCounter<int>("aas_not_found", "counter", "Counts the number of not found AAS shells");
 
     public AasQlService(AasServerRepository aasServerRepository, IHttpClientFactory httpClientFactory)
     {
@@ -40,7 +45,7 @@ public partial class AasQlService : IAasQlService
     public List<UpdateInformation> GetSoftwareUpdate(AasQlQueryAttributes aasQLAttr, HttpRequest request)
     {
         try
-        {         
+        {
             var featureFlagSkipParseAAS = skipParseAas(request);
 
             var aasServer = _repository.GetFirstServerInList();
@@ -50,19 +55,24 @@ public partial class AasQlService : IAasQlService
             Log.Information("[{Method}] AasQLAttributes: {Attributes} => AAS Server: {AasServer}",
                 nameof(GetSoftwareUpdate), aasQLAttr, aasServer.Name);
 
-            // Create AASql PCN query string using the provided attributes
+            // Build AASQL queries (JSON with top-level "Query")
             var aasqlPCNQuery = BuildAasqlPcnQuery(aasQLAttr);
-
-            // Create AASql PCN query string using the provided attributes
             var aasqlSNPQuery = BuildAasqlSNPQuery(aasQLAttr);
-            
-            Log.Information("Executing AASql PCN Query: {Query}", aasqlPCNQuery);
-            Log.Information("Executing AASql SNP Query: {Query}", aasqlSNPQuery);
-            
+            Log.Debug("AASQL PCN request body: {Body}", aasqlPCNQuery);
+            Log.Debug("AASQL SNP request body: {Body}", aasqlSNPQuery);
+
+            // Parse them into JsonNode so Refit sends a proper JSON object
+            var pcnNode = JsonNode.Parse(aasqlPCNQuery)!;
+            var snpNode = JsonNode.Parse(aasqlSNPQuery)!;
+
             var httpClient = _httpClientFactory.CreateClient();
             if (aasServer.Auth != null)
+            {
                 if (!aasServer.Auth.Authenticate(httpClient, _httpClientFactory))
-                    throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication");
+                    throw new HttpProblemResponseException(
+                        StatusCodes.Status401Unauthorized,
+                        "Error while executing authentication");
+            }
 
             httpClient.BaseAddress = new Uri(aasServer.Url);
             
@@ -79,55 +89,87 @@ public partial class AasQlService : IAasQlService
 
             var aasqlClient = RestService.For<IAasQLApi>(httpClient);
 
-            // Execute AASql query
-            var queryPCNResponse = aasqlClient.QuerySubmodels(aasqlPCNQuery).Result;
-            var querySNPResponse = aasqlClient.QuerySubmodels(aasqlSNPQuery).Result;
-            
-            if (!queryPCNResponse.IsSuccessful)
-                throw new HttpProblemResponseException(StatusCodes.Status422UnprocessableEntity, "Error while executing AASql PCN query");
-           if (!querySNPResponse.IsSuccessful)
-                throw new HttpProblemResponseException(StatusCodes.Status422UnprocessableEntity, "Error while executing AASql SNP query");
-            
-            var pcnResult = queryPCNResponse.Content;
-            var snpResult = querySNPResponse.Content;
-            
-            if (pcnResult == null)
-                throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No PCN results found for AASql query");
-                
-            if (snpResult == null)
-                throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No SNP results found for AASql query");
+            //Execute AASql query
+            var queryPCNResponse = aasqlClient.QuerySubmodels(pcnNode).Result;
+            Log.Debug("AASQL PCN raw response: {Status} {Text}",
+                queryPCNResponse.StatusCode,
+                queryPCNResponse.Content?.ToJsonString());
 
-            Dictionary<string, JsonNode> receivedPcns = new();
-            Dictionary<string, JsonNode> receivedSnps = new();
-  
+            if (!queryPCNResponse.IsSuccessStatusCode || queryPCNResponse.Content is null)
+            {
+                throw new HttpProblemResponseException(
+                    StatusCodes.Status422UnprocessableEntity,
+                    $"Error while executing AASql PCN query: {queryPCNResponse.StatusCode} {queryPCNResponse.Error?.Content}");
+            }
+
+            // ---------- SNP ----------
+            var querySNPResponse = aasqlClient.QuerySubmodels(snpNode).Result;
+            Log.Debug("AASQL SNP raw response: {Status} {Text}",
+                querySNPResponse.StatusCode,
+                querySNPResponse.Content?.ToJsonString());
+
+            if (!querySNPResponse.IsSuccessStatusCode || querySNPResponse.Content is null)
+            {
+                throw new HttpProblemResponseException(
+                    StatusCodes.Status422UnprocessableEntity,
+                    $"Error while executing AASql SNP query: {querySNPResponse.StatusCode} {querySNPResponse.Error?.Content}");
+            }
+
+            var pcnJson = queryPCNResponse.Content;
+            var snpJson = querySNPResponse.Content;
+            List<UpdateInformation>? parsedUpdates = null;
+
             if (!featureFlagSkipParseAAS)
-                return PcnParser.parsePcnAndSoftwareNameplateSubmodels(receivedPcns.Values.ToList(),
-                  receivedSnps.Values.ToList());
+            {
+                try
+                {
+                    var pcnSubmodels = ExtractSubmodelsFromResult(pcnJson);
+                    var snpSubmodels = ExtractSubmodelsFromResult(snpJson);
 
-            // Fallback, since the AAS libary does not work on arm64
-            JsonObject pcnJsonObject = null;
-            JsonObject softwareNameplateJsonObject = null;
-            foreach (var l in receivedSnps)
-            {
-                softwareNameplateJsonObject = l.Value.AsObject();
+                    parsedUpdates = PcnParser.parsePcnAndSoftwareNameplateSubmodels(
+                        pcnSubmodels,
+                        snpSubmodels
+                    );
+                }
+                // aaspe-common missing => fall back instead of 500
+                catch (FileNotFoundException ex) when (
+                    (ex.FileName ?? string.Empty)
+                        .Contains("aaspe-common", StringComparison.OrdinalIgnoreCase)
+                )
+                {
+                    Log.Warning(ex,
+                        "aaspe-common not found. Skipping AAS parsing and falling back to raw JSON result.");
+                }
             }
-            foreach (var l in receivedPcns)
+
+            if (parsedUpdates != null)
             {
-                pcnJsonObject = l.Value.AsObject();
+                return parsedUpdates;
             }
-            var updates = new List<UpdateInformation>();
-            var update = new UpdateInformation("", "", "", "", "", softwareNameplateJsonObject, pcnJsonObject);
-            updates.Add(update);
+
+            // ---------- Fallback: use raw JSON submodels ----------
+            var firstPcn = ExtractSubmodelsFromResult(pcnJson).FirstOrDefault() as JsonObject
+                           ?? new JsonObject();
+            var firstSnp = ExtractSubmodelsFromResult(snpJson).FirstOrDefault() as JsonObject
+                           ?? new JsonObject();
+
+            var updates = new List<UpdateInformation>
+            {
+                new(
+                    "", "", "", "", "",
+                    firstSnp,
+                    firstPcn
+                )
+            };
+
             return updates;
         }
         catch (HttpProblemResponseException)
         {
-            // QueryFailed.Add(1, new KeyValuePair<string, object?>("method", "GetSoftwareUpdate"));
             throw;
         }
         catch (Exception e)
         {
-            // QueryFailed.Add(1, new KeyValuePair<string, object?>("method", "GetSoftwareUpdate"));
             Log.Error(e, "Error executing AASql query for software update");
             throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError, "Internal server error");
         }
@@ -136,7 +178,7 @@ public partial class AasQlService : IAasQlService
     public List<HandoverDocumentation> GetHandoverDocumentation(AasQlQueryAttributes aasQLAttr, HttpRequest request)
     {
         try
-        {           
+        {
             // Similar implementation for handover documentation
             // For now, return empty list
             return new List<HandoverDocumentation>();
@@ -152,42 +194,42 @@ public partial class AasQlService : IAasQlService
     {
         // Build AASql query based on provided attributes
         var query = $@"{{
-            ""Query"": {{
-                ""$condition"": {{
-                    ""$and"": [
-                        {{
-                            ""$eq"": [
-                                {{ ""$field"": ""$sm#idShort"" }},
-                                {{ ""$strVal"": ""Nameplate"" }}
-                            ]
-                        }},
-                        {{
-                            ""$or"": [
-                                {{
-                                    ""$contains"": [
-                                        {{ ""$field"": ""$sme.ManufacturerName#value"" }},
-                                        {{ ""$strVal"": ""{attributes.ManufacturerName}"" }}
-                                    ]
-                                }},
-                                {{
-                                    ""$contains"": [
-                                        {{ ""$field"": ""$sme.OrderCodeOfManufacturer#value"" }},
-                                        {{ ""$strVal"": ""{attributes.OrderCodeOfManufacturer}"" }}
-                                    ]
-                                }},
-                                {{
-                                    ""$contains"": [
-                                        {{ ""$field"": ""$sme.ManufacturerProductType#value"" }},
-                                        {{ ""$strVal"": ""{attributes.ManufacturerProductType}"" }}
-                                    ]
-                                }}
-                            ]
-                        }}
-                    ]
-                }}
+  ""Query"": {{
+    ""$condition"": {{
+      ""$and"": [
+        {{
+          ""$eq"": [
+            {{ ""$field"": ""$sm#idShort"" }},
+            {{ ""$strVal"": ""Nameplate"" }}
+          ]
+        }},
+        {{
+          ""$or"": [
+            {{
+              ""$contains"": [
+                {{ ""$field"": ""$sme.ManufacturerName#value"" }},
+                {{ ""$strVal"": ""{attributes.ManufacturerName}"" }}
+              ]
+            }},
+            {{
+              ""$contains"": [
+                {{ ""$field"": ""$sme.OrderCodeOfManufacturer#value"" }},
+                {{ ""$strVal"": ""{attributes.OrderCodeOfManufacturer}"" }}
+              ]
+            }},
+            {{
+              ""$contains"": [
+                {{ ""$field"": ""$sme.ManufacturerProductType#value"" }},
+                {{ ""$strVal"": ""{attributes.ManufacturerProductType}"" }}
+              ]
             }}
-        }}";
-        
+          ]
+        }}
+      ]
+    }}
+  }}
+}}";
+
         return query;
     }
 
@@ -195,45 +237,56 @@ public partial class AasQlService : IAasQlService
     {
         // Build AASql query based on provided attributes
         var query = $@"{{
-            ""Query"": {{
-                ""$condition"": {{
-                    ""$and"": [
-                        {{
-                            ""$eq"": [
-                                {{ ""$field"": ""$sm#idShort"" }},
-                                {{ ""$strVal"": ""Nameplate"" }}
-                            ]
-                        }},
-                        {{
-                            ""$or"": [
-                                {{
-                                    ""$contains"": [
-                                        {{ ""$field"": ""$sme.ManufacturerName#value"" }},
-                                        {{ ""$strVal"": ""{attributes.ManufacturerName}"" }}
-                                    ]
-                                }},
-                                {{
-                                    ""$contains"": [
-                                        {{ ""$field"": ""$sme.OrderCodeOfManufacturer#value"" }},
-                                        {{ ""$strVal"": ""{attributes.OrderCodeOfManufacturer}"" }}
-                                    ]
-                                }},
-                                {{
-                                    ""$contains"": [
-                                        {{ ""$field"": ""$sme.ManufacturerProductType#value"" }},
-                                        {{ ""$strVal"": ""{attributes.ManufacturerProductType}"" }}
-                                    ]
-                                }}
-                            ]
-                        }}
-                    ]
-                }}
+  ""Query"": {{
+    ""$condition"": {{
+      ""$and"": [
+        {{
+          ""$eq"": [
+            {{ ""$field"": ""$sm#idShort"" }},
+            {{ ""$strVal"": ""Nameplate"" }}
+          ]
+        }},
+        {{
+          ""$or"": [
+            {{
+              ""$contains"": [
+                {{ ""$field"": ""$sme.ManufacturerName#value"" }},
+                {{ ""$strVal"": ""{attributes.ManufacturerName}"" }}
+              ]
+            }},
+            {{
+              ""$contains"": [
+                {{ ""$field"": ""$sme.OrderCodeOfManufacturer#value"" }},
+                {{ ""$strVal"": ""{attributes.OrderCodeOfManufacturer}"" }}
+              ]
+            }},
+            {{
+              ""$contains"": [
+                {{ ""$field"": ""$sme.ManufacturerProductType#value"" }},
+                {{ ""$strVal"": ""{attributes.ManufacturerProductType}"" }}
+              ]
             }}
-        }}";
-        
+          ]
+        }}
+      ]
+    }}
+  }}
+}}";
+
         return query;
     }
 
+
+    /// Helper to extract the "result" array (submodels) from the AASQL response.
+    private static List<JsonNode> ExtractSubmodelsFromResult(JsonNode root)
+    {
+        if (root?["result"] is JsonArray arr)
+        {
+            return arr.ToList();
+        }
+
+        return new List<JsonNode>();
+    }
 
     private List<UpdateInformation> ParseQueryResults(JsonNode results)
     {

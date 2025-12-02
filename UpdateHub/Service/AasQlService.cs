@@ -145,7 +145,7 @@ public partial class AasQlService : IAasQlService
 
     private string BuildAasqlShellQuery(AasQlQueryAttributes attributes)
     {
-        // This matches the curl you posted (extended with attributes)
+        // Returns the Asset ID based on the nameplate submodel attributes
         var query = $@"{{
   ""Query"": {{
     ""$select"": ""id"",
@@ -190,7 +190,7 @@ public partial class AasQlService : IAasQlService
     }
 
 
-    /// Helper to extract the "result" array (shells) from the AASQL response.
+    /// Helper to extract the result array (shells) from the AASQL response.
     private static List<JsonNode> ExtractResultArray(JsonNode root)
     {
         if (root?["result"] is JsonArray arr)

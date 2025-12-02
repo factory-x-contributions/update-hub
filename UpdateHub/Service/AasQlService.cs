@@ -10,12 +10,15 @@ using Serilog;
 using UpdateHub.Domain;
 using UpdateHub.Endpoints;
 using UpdateHub.Models;
+using System.Reflection;
+using System.Buffers.Text;
+using System.Text;
 
 namespace UpdateHub.Service;
 
 public interface IAasQlService
 {
-    List<UpdateInformation> GetSoftwareUpdate(AasQlQueryAttributes aasQLAttr, HttpRequest request);
+    List<UpdateInformation> GetSoftwareUpdateViaAssetIDQuery(AasQlQueryAttributes aasQLAttr, HttpRequest request);
     List<HandoverDocumentation> GetHandoverDocumentation(AasQlQueryAttributes aasQLAttr, HttpRequest request);
 }
 
@@ -41,6 +44,139 @@ public partial class AasQlService : IAasQlService
         var flag = false;
         return bool.TryParse(request.Headers["SKIP_PARSE_AAS"].ToString().ToLower(), out flag);
     }
+
+
+    public List<UpdateInformation> GetSoftwareUpdateViaAssetIDQuery(AasQlQueryAttributes aasQLAttr, HttpRequest request)
+    { 
+        try
+        {      
+            var featureFlagSkipParseAAS = skipParseAas(request);
+
+            // Simply take the first server in config.yaml which is the only one supporting AASQL
+            var aasServer = _repository.GetFirstServerInList();
+            if (aasServer == null)
+                throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No AAS Server found");
+
+            Log.Information("[{Method}] AasQLAttributes: {Attributes} => AAS Server: {AasServer}",
+                nameof(GetSoftwareUpdate), aasQLAttr, aasServer.Name);
+
+            // Build AASQL query that returns AAS shells (id + shell info)
+            var aasqlShellQuery = BuildAasqlShellQuery(aasQLAttr);
+            Log.Debug("AASQL Shell request body: {Body}", aasqlShellQuery);
+
+            // Parse JSON so Refit sends an actual JSON object body
+            var shellNode = JsonNode.Parse(aasqlShellQuery)!;
+
+            var httpClient = _httpClientFactory.CreateClient();
+            if (aasServer.Auth != null)
+            {
+                if (!aasServer.Auth.Authenticate(httpClient, _httpClientFactory))
+                    throw new HttpProblemResponseException(
+                        StatusCodes.Status401Unauthorized,
+                        "Error while executing authentication");
+            }
+
+            httpClient.BaseAddress = new Uri(aasServer.Url);
+
+            var aasqlClient = RestService.For<IAasQLApi>(httpClient);
+            var queryShellResponse = aasqlClient.QueryShells(shellNode).Result;
+            
+            Log.Debug(
+                "AASQL Shell raw response: {Status} {Text}",
+                queryShellResponse.StatusCode,
+                queryShellResponse.Content?.ToJsonString()
+            );
+
+            if (!queryShellResponse.IsSuccessStatusCode || queryShellResponse.Content is null)
+            {
+                throw new HttpProblemResponseException(
+                    StatusCodes.Status422UnprocessableEntity,
+                    $"Error while executing AASql shell query: {queryShellResponse.StatusCode} {queryShellResponse.Error?.Content}");
+            }
+
+            var resultJson = queryShellResponse.Content;
+            var shellsJson = ExtractResultArray(resultJson);
+
+            if (shellsJson.Count == 0)
+            {
+                AasNotFound.Add(1, new KeyValuePair<string, object?>("method", MethodBase.GetCurrentMethod()?.Name ?? "unknown"));
+                // No matching asset – return empty list
+                return new List<UpdateInformation>();
+            }
+            AasFound.Add(1, new KeyValuePair<string, object?>("method", MethodBase.GetCurrentMethod()?.Name ?? "unknown"));
+
+            var firstShell = shellsJson[0] as JsonObject ?? new JsonObject();
+            var shellId = firstShell["id"]?.GetValue<string>() ?? string.Empty;
+            Log.Information("Resolved AAS shell id: {ShellId}", shellId);
+
+            var _restApiService = RestService.For<IAasApi>(httpClient);
+            Dictionary<string, JsonNode> receivedPcns = new();
+            Dictionary<string, JsonNode> receivedSoftwareNameplates = new();
+
+            // Legacy code to fetch submodels from AAS server
+
+            var shellIdEncoded = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId));
+            var response = _restApiService.GetShellDescriptors(shellIdEncoded).Result;
+            if (!response.IsSuccessful)
+                throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError, "Error while fetching Shell Descriptors from AAS server");
+
+
+            foreach (var d in response.Content.SubmodelDescriptors)
+            {
+                if (d.idShort.Contains("ProductChangeNotifications"))
+                {
+                    var pcn = _restApiService.GetSubmodelsFromShell(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)),
+                        Base64Url.EncodeToString(Encoding.UTF8.GetBytes(d.id)))
+                      .Result;
+                    if (!pcn.IsSuccessful)
+                        throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError, "Error while fetching PCN from AAS server");
+
+                    receivedPcns[pcn.Content["id"].AsValue().ToString()] = pcn.Content;
+                }
+
+                if (d.idShort.Contains("SoftwareNameplate"))
+                {
+                    var nameplate = _restApiService
+                      .GetSubmodelsFromShell(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)),
+                        Base64Url.EncodeToString(Encoding.UTF8.GetBytes(d.id))).Result;
+                    if (!nameplate.IsSuccessful)
+                        throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError, "Error while fetching Software Nameplate from AAS server");
+
+                    receivedSoftwareNameplates[nameplate.Content["id"].AsValue().ToString()] = nameplate.Content;
+                }
+            }
+
+            if (!featureFlagSkipParseAAS)
+                return PcnParser.parsePcnAndSoftwareNameplateSubmodels(receivedPcns.Values.ToList(),
+                  receivedSoftwareNameplates.Values.ToList());
+
+            var updates = new List<UpdateInformation>
+            {
+                new(
+                    shellId,           
+                    "",                // date
+                    "",                // version
+                    "",                // installationUri
+                    "",                // installationChecksum
+                    firstShell,        // full shell JSON here (softwareNameplateSubmodel slot)
+                    new JsonObject()   // empty PCN record (no PCN here)
+                )
+            };
+
+            return updates;
+
+        }
+        catch (HttpProblemResponseException)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Error executing AASql query for software update");
+            throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError, "Internal server error");
+        }
+    }
+
 
     public List<UpdateInformation> GetSoftwareUpdate(AasQlQueryAttributes aasQLAttr, HttpRequest request)
     {

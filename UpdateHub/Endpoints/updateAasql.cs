@@ -21,7 +21,7 @@ public static class UpdateAasql
         {         
           try
           {
-            return Results.Ok(aasQLService.GetSoftwareUpdate(aasQLAttributes, request));
+            return Results.Ok(aasQLService.GetSoftwareUpdateViaAssetIDQuery(aasQLAttributes, request));
           }
           catch (HttpProblemResponseException e)
           {

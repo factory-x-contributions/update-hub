@@ -180,15 +180,16 @@ public partial class AasQlService : IAasQlService
 
     private string BuildAasqlPcnQuery(AasQlQueryAttributes attributes)
     {
-        // Build AASql query based on provided attributes
+        // The Query returns the AAS Global ID and other information based on submodel attributes
         var query = $@"{{
   ""Query"": {{
+    ""$select"": ""id"",
     ""$condition"": {{
       ""$and"": [
         {{
           ""$eq"": [
             {{ ""$field"": ""$sm#idShort"" }},
-            {{ ""$strVal"": ""Nameplate"" }}
+            {{ ""$strVal"": ""ProductChangeNotifications"" }}
           ]
         }},
         {{
@@ -223,9 +224,10 @@ public partial class AasQlService : IAasQlService
 
     private string BuildAasqlSNPQuery(AasQlQueryAttributes attributes)
     {
-        // Build AASql query based on provided attributes
+        // The Query returns the AAS Global ID and other information based on Software Nameplate submodel attributes
         var query = $@"{{
   ""Query"": {{
+    ""$select"": ""id"",
     ""$condition"": {{
       ""$and"": [
         {{

@@ -62,6 +62,9 @@ public partial class IrsService : IIrsService
                 credAuth.ClientSecret = _applicationConfig.irs.ClientSecret;
                 credAuth.TokenUrl = _applicationConfig.irs.TokenUrl;
                 irsAuth = credAuth;
+                // irs v2 uses base64url encoding for semanticId
+                // semanticIdSoftwareNameplateSubmodel = "aHR0cHM6Ly9hZG1pbi1zaGVsbC5pby9pZHRhL1NvZnR3YXJlTmFtZXBsYXRlLzEvMA";
+                // semanticIdPcnSubmodel = "MDE3My0xMDAyOSMwMS1YRkIwMDEjMDAx";
                 break;
             case "v1": // irs api v1 : username + password + token
                 var pwAuth = new Oauth2PasswordFlow();
@@ -170,6 +173,9 @@ public partial class IrsService : IIrsService
                 credAuth.ClientSecret = _applicationConfig.irs.ClientSecret;
                 credAuth.TokenUrl = _applicationConfig.irs.TokenUrl;
                 irsAuth = credAuth;
+                // v2 api uses base64 url encoded semantic ids
+                // semanticIdHandoverDocumentationV120Submodel = "MDE3My0xIzAxLUFIRjU3OCMwMDE"; // Handover Documentation V1.2.0
+                // semanticIdHandoverDocumentationV200Submodel = "MDE3My0xIzAxLUFIRjU3OCMwMDM"; // Handover Documentation V2.0.0
                 break;
             case "v1": // irs api v1 : username + password + token
                 var pwAuth = new Oauth2PasswordFlow();
@@ -201,11 +207,11 @@ public partial class IrsService : IIrsService
         switch (_applicationConfig.irs.ApiVersion)
         {
             case "v2": // irs api v2
-            default:
                 httpClient.BaseAddress = new Uri($"{_applicationConfig.irs.Url}/api/v2");
                 _restApiService = RestService.For<IIrsApi>(httpClient);
                 break;
             case "v1": // irs api v1
+            default:
                 httpClient.BaseAddress = new Uri($"{_applicationConfig.irs.Url}/api/v1");
                 _restApiService = RestService.For<IIrsApiV1>(httpClient);
                 break;
@@ -250,7 +256,8 @@ public partial class IrsService : IIrsService
 
 
             if (!featureFlagSkipParseAAS)
-                return HoDParser.parseHandoverDocumentationSubmodels(receivedHoDSubmodels, _applicationConfig.irs.Url, idLink); // baseUrl, aasIdentifier
+                return HoDParser.parseHandoverDocumentationSubmodels(receivedHoDSubmodels, $"{httpClient.BaseAddress.ToString()}/assets", idLink); // baseUrl, aasIdentifier
+                                                                                                                                                   // return HoDParser.parseHandoverDocumentationSubmodels(receivedHoDSubmodels, _applicationConfig.irs.Url, idLink); // baseUrl, aasIdentifier
 
             // Fallback, since the AAS libary does not work on arm64
             JsonObject hodJsonObject = null;

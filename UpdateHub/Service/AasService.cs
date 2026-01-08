@@ -247,11 +247,12 @@ public partial class AasService : IAasService
             //
             // Shell Descriptors
             var aasIdentifier = ""; // FIXME: assuming, that there is only one shellId that is used, i.e: for loop is unnecessary (would only occur if there are more than one shell with the same identifier)
+            var shellIdEncoded = "";
             foreach (var shellId in shellIds.Content)
             {
                 Log.Information($"Shell Id: {shellId}");
                 aasIdentifier = shellId;
-                var shellIdEncoded = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId));
+                shellIdEncoded = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId));
                 var response = _restApiService.GetShellDescriptors(shellIdEncoded).Result;
                 if (!response.IsSuccessful)
                     throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError, "Error while fetching Shell Descriptors from AAS server");
@@ -274,7 +275,7 @@ public partial class AasService : IAasService
             }
 
             if (!featureFlagSkipParseAAS)
-                return HoDParser.parseHandoverDocumentationSubmodels(receivedHoDs.Values.ToList(), baseUrl, aasIdentifier);
+                return HoDParser.parseHandoverDocumentationSubmodels(receivedHoDs.Values.ToList(), $"{baseUrl}/shells", shellIdEncoded);
 
             // maybe needs array of byte[] arrays to provide all pdfs blobs
             JsonObject hodJsonObject = null;

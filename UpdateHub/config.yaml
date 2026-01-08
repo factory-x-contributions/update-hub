@@ -40,11 +40,11 @@ aas-servers:
     discovery-url: https://sample-company-1.com/products/aas/v3.0 # Only used for v30
     auth:
 
-irs:
-  api-version: v2
-  url: https://irs-sample-server.de/irs
-  username: my-username
-  password: my-password
-  client-id: my-client-id
-  client-secret: my-client-secret
-  token-url: https://sample-company-1.com/auth/token
+irs: # can be used with v1 (default) or v2 of the irs API
+  api-version: v2 # switch for v2
+  url: https://irs-sample-server.de/irs # for v1
+  username: my-username # for v1
+  password: my-password # for v1
+  client-id: my-client-id # for v2
+  client-secret: my-client-secret # for v2
+  token-url: https://sample-company-1.com/auth/token # for v2

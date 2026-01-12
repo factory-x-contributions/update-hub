@@ -56,7 +56,6 @@ public partial class IrsService : IIrsService
         switch (_applicationConfig.irs.ApiVersion)
         {
             case "v2": // irs api v2 : cliendid + secret
-            default:
                 var credAuth = new Oauth2CredentialsFlow();
                 credAuth.ClientId = _applicationConfig.irs.ClientId;
                 credAuth.ClientSecret = _applicationConfig.irs.ClientSecret;
@@ -67,6 +66,7 @@ public partial class IrsService : IIrsService
                 // semanticIdPcnSubmodel = "MDE3My0xMDAyOSMwMS1YRkIwMDEjMDAx";
                 break;
             case "v1": // irs api v1 : username + password + token
+            default:
                 var pwAuth = new Oauth2PasswordFlow();
                 pwAuth.Username = _applicationConfig.irs.Username;
                 pwAuth.Password = _applicationConfig.irs.Password;
@@ -95,11 +95,11 @@ public partial class IrsService : IIrsService
         switch (_applicationConfig.irs.ApiVersion)
         {
             case "v2": // irs api v2
-            default:
                 httpClient.BaseAddress = new Uri($"{_applicationConfig.irs.Url}/api/v2");
                 _restApiService = RestService.For<IIrsApi>(httpClient);
                 break;
             case "v1": // irs api v1
+            default:
                 httpClient.BaseAddress = new Uri($"{_applicationConfig.irs.Url}/api/v1");
                 _restApiService = RestService.For<IIrsApiV1>(httpClient);
                 break;
@@ -167,7 +167,6 @@ public partial class IrsService : IIrsService
         switch (_applicationConfig.irs.ApiVersion)
         {
             case "v2": // irs api v2 : cliendid + secret
-            default:
                 var credAuth = new Oauth2CredentialsFlow();
                 credAuth.ClientId = _applicationConfig.irs.ClientId;
                 credAuth.ClientSecret = _applicationConfig.irs.ClientSecret;
@@ -178,6 +177,7 @@ public partial class IrsService : IIrsService
                 // semanticIdHandoverDocumentationV200Submodel = "MDE3My0xIzAxLUFIRjU3OCMwMDM"; // Handover Documentation V2.0.0
                 break;
             case "v1": // irs api v1 : username + password + token
+            default:
                 var pwAuth = new Oauth2PasswordFlow();
                 pwAuth.Username = _applicationConfig.irs.Username;
                 pwAuth.Password = _applicationConfig.irs.Password;

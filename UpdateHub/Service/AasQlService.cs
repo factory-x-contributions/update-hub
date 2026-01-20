@@ -319,12 +319,6 @@ public partial class AasQlService : IAasQlService
         }},
         {{
           ""$eq"": [
-            {{ ""$field"": ""$sme.UriOfTheProduct#value"" }},
-            {{ ""$strVal"": ""{attributes.UriOfTheProduct}"" }}
-          ]
-        }},
-        {{
-          ""$eq"": [
             {{ ""$field"": ""$sm#idShort"" }},
             {{ ""$strVal"": ""Nameplate"" }}
           ]
@@ -333,7 +327,6 @@ public partial class AasQlService : IAasQlService
     }}
   }}
 }}";
-
         return query;
     }
 

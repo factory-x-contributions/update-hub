@@ -7,8 +7,8 @@ namespace UpdateHub.Models
     public record AasQlQueryAttributes(
       String ManufacturerName,
       String OrderCodeOfManufacturer,
-      String ManufacturerProductType,
-      String UriOfTheProduct)
+      String ManufacturerProductType
+      )
     {
     }
 }

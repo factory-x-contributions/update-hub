@@ -11,7 +11,7 @@ public static class UpdateAasql
 {
   public static RouteGroupBuilder AasqlEndpoints(this RouteGroupBuilder group)
   {
-    group.MapPost("/assql/update",
+    group.MapPost("/aasql/update",
         (
           HttpRequest request,
           AasQlQueryAttributes aasQLAttributes,
@@ -35,7 +35,7 @@ public static class UpdateAasql
             return Results.Problem(e.Message, statusCode: StatusCodes.Status500InternalServerError);
           }
         })
-      .WithName("ASSQL")
+      .WithName("AASQL")
       .WithDescription("Execute AASql query to find software updates based on nameplate attributes")
       .WithSummary("Resolves nameplate attributes to PCNs using AASql")
       .WithTags("SoftwareUpdate")

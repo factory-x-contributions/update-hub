@@ -58,7 +58,7 @@ public partial class AasQlService : IAasQlService
                 throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No AAS Server found");
 
             Log.Information("[{Method}] AasQLAttributes: {Attributes} => AAS Server: {AasServer}",
-                nameof(GetSoftwareUpdate), aasQLAttr, aasServer.Name);
+                nameof(GetSoftwareUpdateViaAssetIDQuery), aasQLAttr, aasServer.Name);
 
             // Build AASQL query that returns AAS shells (id + shell info)
             var aasqlShellQuery = BuildAasqlShellQuery(aasQLAttr);
@@ -178,104 +178,7 @@ public partial class AasQlService : IAasQlService
     }
 
 
-    public List<UpdateInformation> GetSoftwareUpdate(AasQlQueryAttributes aasQLAttr, HttpRequest request)
-    {
-        try
-        {
-            var featureFlagSkipParseAAS = skipParseAas(request);
-
-            var aasServer = _repository.GetFirstServerInList();
-            if (aasServer == null)
-                throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No AAS Server found");
-
-            Log.Information("[{Method}] AasQLAttributes: {Attributes} => AAS Server: {AasServer}",
-                nameof(GetSoftwareUpdate), aasQLAttr, aasServer.Name);
-
-            // Build AASQL query that returns AAS shells (id + shell info)
-            var aasqlShellQuery = BuildAasqlShellQuery(aasQLAttr);
-            Log.Debug("AASQL Shell request body: {Body}", aasqlShellQuery);
-
-            // Parse JSON so Refit sends an actual JSON object body
-            var shellNode = JsonNode.Parse(aasqlShellQuery)!;
-
-            var httpClient = _httpClientFactory.CreateClient();
-            if (aasServer.Auth != null)
-            {
-                if (!aasServer.Auth.Authenticate(httpClient, _httpClientFactory))
-                    throw new HttpProblemResponseException(
-                        StatusCodes.Status401Unauthorized,
-                        "Error while executing authentication");
-            }
-
-            httpClient.BaseAddress = new Uri(aasServer.Url);
-            
-            // // Configure Refit with explicit JSON serialization settings
-            // var refitSettings = new RefitSettings
-            // {
-            //     ContentSerializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions
-            //     {
-            //         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            //         WriteIndented = false
-            //     })
-            // };
-            //var aasqlClient = RestService.For<IAasQLApi>(httpClient, refitSettings);
-
-            var aasqlClient = RestService.For<IAasQLApi>(httpClient);
-            var queryShellResponse = aasqlClient.QueryShells(shellNode).Result;
-            Log.Debug(
-                "AASQL Shell raw response: {Status} {Text}",
-                queryShellResponse.StatusCode,
-                queryShellResponse.Content?.ToJsonString()
-            );
-
-            if (!queryShellResponse.IsSuccessStatusCode || queryShellResponse.Content is null)
-            {
-                throw new HttpProblemResponseException(
-                    StatusCodes.Status422UnprocessableEntity,
-                    $"Error while executing AASql shell query: {queryShellResponse.StatusCode} {queryShellResponse.Error?.Content}");
-            }
-
-
-            var shellJson = queryShellResponse.Content;
-            var shells = ExtractResultArray(shellJson);
-            if (shells.Count == 0)
-            {
-                AasNotFound.Add(1, new KeyValuePair<string, object?>("method", "GetSoftwareUpdate"));
-                // No matching asset – return empty list
-                return new List<UpdateInformation>();
-            }
-            AasFound.Add(1, new KeyValuePair<string, object?>("method", "GetSoftwareUpdate"));
-            var firstShell = shells[0] as JsonObject ?? new JsonObject();
-            var assetId = firstShell["id"]?.GetValue<string>() ?? string.Empty;
-            Log.Information("Resolved AAS shell id: {AssetId}", assetId);
-
-            var updates = new List<UpdateInformation>
-            {
-                new(
-                    assetId,           
-                    "",                // date
-                    "",                // version
-                    "",                // installationUri
-                    "",                // installationChecksum
-                    firstShell,        // full shell JSON here (softwareNameplateSubmodel slot)
-                    new JsonObject()   // empty PCN record (no PCN here)
-                )
-            };
-
-            return updates;
-
-        }
-        catch (HttpProblemResponseException)
-        {
-            throw;
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Error executing AASql query for software update");
-            throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError, "Internal server error");
-        }
-    }
-
+    
     public List<HandoverDocumentation> GetHandoverDocumentation(AasQlQueryAttributes aasQLAttr, HttpRequest request)
     {
         try

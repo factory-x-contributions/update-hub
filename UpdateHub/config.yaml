@@ -1,7 +1,6 @@
 aas-servers:
 
 - name: SampleAASQLServer
-  id-link-prefix: https://i.siemens.com/
   url: your-AAS-Server-URL
   auth:
 

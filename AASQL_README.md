@@ -41,10 +41,10 @@ aasServers:
 
 After the service is running, open the Swagger UI `http://0.0.0.0:5292/index.html?urls.primaryName=UpdateHub+v2-earlyaccess` to test the following endpoint.
 
-## Endpoint Details
+## PCN Discovery Endpoint
 Executes an AASQL query to find PCN information based on nameplate attributes.
 
-```
+URL ```
 POST /aasql/update
 ```
 
@@ -61,8 +61,6 @@ Request Body
   "ManufacturerProductType": "string"
 }
 ```
-
-### Parameter Description
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|

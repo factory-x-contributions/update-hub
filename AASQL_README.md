@@ -14,7 +14,7 @@ mkdir aasxs
 # Place your .aasx files in this folder
 ```
 
-2. Deployment: Start the servers using Docker Compose. This will automatically build the custom AASQL-supported image from the `/AAS-Server` directory.
+2. Deployment: Start the servers using Docker Compose from the root directory. This will automatically build the custom AASQL-supported image from the `/AAS-Server` directory.
 
 ```
 docker compose up -d
@@ -37,7 +37,7 @@ aasServers:
     auth:
 ```
 
-- Exection: Follow the standard build and run instructions found in the main [README](README.md).
+- Execution: Follow the standard build and run instructions found in the main [README](README.md).
 
 After the service is running, open the Swagger UI `http://0.0.0.0:5292/index.html?urls.primaryName=UpdateHub+v2-earlyaccess` to test the following endpoint.
 
@@ -48,12 +48,12 @@ Executes an AASQL query to find PCN information based on nameplate attributes.
 POST /aasql/update
 ```
 
-### Content-Type
+Content-Type
 ```
 application/json
 ```
 
-### Request Body
+Request Body
 ```json
 {
   "ManufacturerName": "string",
@@ -108,7 +108,7 @@ application/json
 
 ## Functionality
 
-### 1. AASQL Query Construction
+### AASQL Query Construction
 The service automatically creates an AASQL query based on the provided nameplate attributes:
 
 ```json

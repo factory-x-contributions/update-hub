@@ -32,7 +32,6 @@
             just
             hurl
             httpie
-            k6
             pkgs.dotnetCorePackages.sdk_9_0
 
             pre-commit

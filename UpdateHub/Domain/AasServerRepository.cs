@@ -36,6 +36,15 @@ public class AasServerRepository : IAasServerRepository
     return _aasServers;
   }
 
+  public AasServer GetFirstServerInList()
+  {
+    if (_aasServers.Count > 0)
+    {
+      return _aasServers[0];
+    }
+    return null;
+  }
+
   public AasServer GetByIdLink(string idLink)
   {
     if (string.IsNullOrEmpty(idLink))

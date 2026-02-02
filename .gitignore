@@ -405,4 +405,3 @@ FodyWeavers.xsd
 
 # Docker Script
 update_docker.sh
-config.yaml

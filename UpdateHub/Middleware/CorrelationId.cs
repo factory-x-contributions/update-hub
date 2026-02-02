@@ -81,7 +81,7 @@ public class CorrelationIdMiddleware
     });
 }
 
-public static partial class ApplicationBuilderExtensions
+public static class ApplicationBuilderExtensions
 {
   public static IApplicationBuilder AddCorrelationIdMiddleware(this IApplicationBuilder applicationBuilder)
     => applicationBuilder.UseMiddleware<CorrelationIdMiddleware>();

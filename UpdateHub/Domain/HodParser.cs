@@ -222,7 +222,10 @@ namespace UpdateHub.Domain
                     var submodelIdentifierEnc = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(hodSubmodel.Id));
                     submodelIdentifierEnc = submodelIdentifierEnc = submodelIdentifierEnc.Remove(submodelIdentifierEnc.Length - 2);
                     var idShortPath = $"{col.IdShort}.{DocumentVersionCollection.IdShort}.{digitalFileProperty.IdShort}"; // e.g. Document_01.DocumentVersion.DigitalFile
-                    digitalFilePath = $"{baseUrl}shells/{aasIdentifierEnc}/submodels/{submodelIdentifierEnc}/submodel-elements/{idShortPath}/attachment";
+                    // specific for each shell, apparently legacy?
+                    // digitalFilePath = $"{baseUrl}shells/{aasIdentifierEnc}/submodels/{submodelIdentifierEnc}/submodel-elements/{idShortPath}/attachment";
+                    // new, go directly to submodel
+                    digitalFilePath = $"{baseUrl}submodels/{submodelIdentifierEnc}/submodel-elements/{idShortPath}/attachment";
                 }
 
 

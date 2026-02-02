@@ -45,6 +45,13 @@ public class DiscoveryApiController : ControllerBase
     [FromQuery] int? limit = null, [FromQuery] string? cursor = null)
   {
     var assetIdEncoded = assetIds[0];
+    // Pad base64 string if necessary
+    int mod4 = assetIdEncoded.Length % 4;
+    if (mod4 > 0 )
+    {
+        assetIdEncoded += new string('=', 4 - mod4);
+    }
+
     string assetID = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(assetIdEncoded));
 
     var aasServer = aasServerRepository.GetByIdLink(assetID);

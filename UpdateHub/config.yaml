@@ -1,4 +1,10 @@
 aas-servers:
+
+- name: SampleAASQLServer
+  id-link-prefix: https://i.siemens.com/
+  url: your-AAS-server-URL
+  auth:
+
 - name: SampleAasServerOAuth2
   id-link-prefix: https://sample-company-1.com/
   url: https://sample-company-1.com/aas

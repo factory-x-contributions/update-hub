@@ -7,35 +7,28 @@ In this version, UpdateHub replaces the IDLink search with the [Asset Administra
 ## Prerequisites
 To use this feature, you must host the AAS server locally. We use a dual-server setup because the AASQL-enabled version of the [Eclipse server](https://github.com/eclipse-aaspe/server) currently has limitations regarding the visual rendering of the AAS files stored.
 
-1. Folder Setup
-Create a directory named `aasxs` at the root of the project and place your `.aasx` files there.
+1. Folder Setup: Create a directory named `aasxs` at the root of the project and place your `.aasx` files there.
 
 ```
 mkdir aasxs
 # Place your .aasx files in this folder
 ```
 
-2. Deployment
-
-Start the servers using Docker Compose. This will automatically build the custom AASQL-supported image from the `/AAS-Server` directory.
+2. Deployment: Start the servers using Docker Compose. This will automatically build the custom AASQL-supported image from the `/AAS-Server` directory.
 
 ```
 docker compose up -d
 ```
 
-3. Server Access & UI viewing
-
-Once started, you can interact with the server via two different interfaces:
+3. Server Access & UI viewing: Once started, you can interact with the server via two different interfaces:
 
 - http://localhost:5001 — Data & Query Hub: This instance is required for running AASQL Queries. Use this URL in your `/UpdateHub/config.yaml` configuration. While the UI is functional, it is primarily used for the backend database engine.
 
 - http://localhost:5002 — Visual AASX Browser: This instance is for Correct AAS Server UI Rendering. Use this URL in your browser to visually inspect the AAS tree, verify submodels, and check that your .aasx files are loaded correctly.
 
-4. Run UpdateHub Service
+4. Run UpdateHub Service: Once your AAS Servers is live, you can start the UpdateHub service.
 
-Once your AAS Servers is live, you can start the UpdateHub service.
-
-1. Configuration: Ensure the AASQL Server URL in `/UpdateHub/config.yaml` points to the correct URL and port `5001` and is the first configuration in the list.
+- Configuration: Ensure the AASQL Server URL in `/UpdateHub/config.yaml` points to the correct URL and port `5001` and is the first configuration in the list.
 
 ```yaml
 aasServers:
@@ -44,9 +37,9 @@ aasServers:
     auth:
 ```
 
-2. Exection: Follow the standard build and run instructions found in the main [README](README.md)
+- Exection: Follow the standard build and run instructions found in the main [README](README.md).
 
-After the service is running, open the [Swagger UI](http://0.0.0.0:5292/index.html?urls.primaryName=UpdateHub+v2-earlyaccess) to test the following endpoint.
+After the service is running, open the Swagger UI `http://0.0.0.0:5292/index.html?urls.primaryName=UpdateHub+v2-earlyaccess` to test the following endpoint.
 
 ## Endpoint Details
 Executes an AASQL query to find PCN information based on nameplate attributes.

@@ -1,8 +1,10 @@
 aas-servers:
 
-- name: SampleAASQLServer
-  url: your-AAS-Server-URL
+- name: DockerAasqlServer
+  id-link-prefix: https://i.siemens.com/  # We need the id link so that the non AASQL functions find the server
+  url: http://aas-db:5001/
   auth:
+
 
 - name: SampleAasServerOAuth2
   id-link-prefix: https://sample-company-1.com/

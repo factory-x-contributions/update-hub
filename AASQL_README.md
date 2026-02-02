@@ -44,7 +44,7 @@ After the service is running, open the Swagger UI `http://0.0.0.0:5292/index.htm
 ## PCN Discovery Endpoint
 Executes an AASQL query to find PCN information based on nameplate attributes.
 
-URL ```
+URL bash```
 POST /aasql/update
 ```
 

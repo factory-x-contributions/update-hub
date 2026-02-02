@@ -1,19 +1,8 @@
 aas-servers:
 
-# - name: AssetFox
-#   id-link-prefix: siemens
-#   url: https://test.assetfox.apps.siemens.cloud/api/aas/v3
-#   discovery-url: https://test.assetfox.apps.siemens.cloud/api/aas/v3 
-#   version: v30
-#   auth:
-#     auth-type: oauth2
-#     client-id: 71V3FZJTKX
-#     client-secret: "Yf@*U4TBn5NLo*C"
-#     token-url: https://test.assetfox.apps.siemens.cloud/auth/realms/assetfox/protocol/openid-connect/token
-
 - name: SampleAASQLServer
   id-link-prefix: https://i.siemens.com/
-  url: http://192.168.56.101:5002/
+  url: your-AAS-Server-URL
   auth:
 
 - name: SampleAasServerOAuth2

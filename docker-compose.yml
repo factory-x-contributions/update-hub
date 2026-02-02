@@ -1,0 +1,22 @@
+services:
+  # AAS Server Service with Database (required for AASQL)
+  aas-db:
+    build: 
+      context: ./AAS-Server
+    image: aasx-server-aasql
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./aasxs:/app/aasxs
+    command: ["AasxServerBlazor.dll", "--host", "0.0.0.0", "--no-security", "--data-path", "./aasxs", "--external-blazor", "http://localhost:5001", "--with-db"]
+    restart: unless-stopped
+
+  # AAS Server Service without Database (required for correct AAS Server UI)
+  aas-files:
+    image: aasx-server-aasql
+    ports:
+      - "5002:5001" # Mapped to 5002 on your machine
+    volumes:
+      - ./aasxs:/app/aasxs
+    command: ["AasxServerBlazor.dll", "--host", "0.0.0.0", "--no-security", "--data-path", "./aasxs", "--external-blazor", "http://localhost:5002"]
+    restart: unless-stopped

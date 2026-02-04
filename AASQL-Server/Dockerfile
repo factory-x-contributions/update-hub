@@ -3,7 +3,7 @@ WORKDIR /install
 
 RUN apk add --no-cache curl unzip
 
-ENV AAS_VERSION="v0.3.1.579-aasV3-alpha-latest"
+ENV AAS_VERSION="v0.3.1.552-aasV3-alpha-latest"
 ENV AAS_ZIP="AasxServerBlazor.${AAS_VERSION}.zip"
 
 RUN curl -L -o ${AAS_ZIP} https://github.com/eclipse-aaspe/server/releases/download/${AAS_VERSION}/${AAS_ZIP} \

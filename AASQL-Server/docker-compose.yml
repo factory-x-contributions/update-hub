@@ -2,7 +2,7 @@ services:
   # AAS Server Service with Database (required for AASQL)
   aas-db:
     build: 
-      context: ./AAS-Server
+      context: .
     image: aasx-server-aasql
     ports:
       - "5001:5001"
@@ -10,6 +10,8 @@ services:
       - ./aasxs:/app/aasxs
     command: ["AasxServerBlazor.dll", "--host", "0.0.0.0", "--no-security", "--data-path", "./aasxs", "--external-blazor", "http://localhost:5001", "--with-db"]
     restart: unless-stopped
+    networks:
+      - updatehub-network
 
   # AAS Server Service without Database (required for correct AAS Server UI)
   aas-files:
@@ -20,3 +22,29 @@ services:
       - ./aasxs:/app/aasxs
     command: ["AasxServerBlazor.dll", "--host", "0.0.0.0", "--no-security", "--data-path", "./aasxs", "--external-blazor", "http://localhost:5002"]
     restart: unless-stopped
+    networks:
+      - updatehub-network
+
+  # UpdateHub Application
+  updatehub:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: updatehub:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    volumes:
+      - ./config_aasql_dockercompose.yaml:/app/config.yaml
+    restart: unless-stopped
+    networks:
+      - updatehub-network
+    depends_on:
+      - aas-db
+      - aas-files
+
+networks:
+  updatehub-network:
+    driver: bridge

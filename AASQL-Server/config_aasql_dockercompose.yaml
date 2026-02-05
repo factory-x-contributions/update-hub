@@ -1,7 +1,0 @@
-aas-servers:
-
-- name: DockerAasqlServer
-  id-link-prefix: https://i.siemens.com/
-  url: http://aas-db:5001/
-  auth:
-

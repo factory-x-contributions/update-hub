@@ -2,7 +2,7 @@ services:
   # AAS Server Service with Database (required for AASQL)
   aas-db:
     build: 
-      context: .
+      context: ./AASQL-Server
     image: aasx-server-aasql
     ports:
       - "5001:5001"
@@ -28,7 +28,7 @@ services:
   # UpdateHub Application
   updatehub:
     build:
-      context: ..
+      context: .
       dockerfile: Dockerfile
     image: updatehub:latest
     ports:
@@ -37,7 +37,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
     volumes:
-      - ./config_aasql_dockercompose.yaml:/app/config.yaml
+      - ./UpdateHub/config.yaml:/app/config.yaml
     restart: unless-stopped
     networks:
       - updatehub-network

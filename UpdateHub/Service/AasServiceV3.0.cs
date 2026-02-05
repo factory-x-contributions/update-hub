@@ -203,10 +203,11 @@ public partial class AasService
             Dictionary<string, JsonNode> receivedHoDs = new();
 
             var aasIdentifier = ""; // FIXME: assuming, that there is only one shellId that is used, i.e: for loop is unnecessary (would only occur if there are more than one shell with the same identifier)
+            var shellIdEncoded = "";
             foreach (var shellId in shellIds.Content.Result) //TODO Result
             {
                 aasIdentifier = shellId;
-                var shellIdEncoded = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId));
+                shellIdEncoded = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId));
                 var response = _restApiService.GetShell(shellIdEncoded).Result;
                 if (!response.IsSuccessful)
                     throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError, "Error while fetching Shells from AAS server");
@@ -243,7 +244,7 @@ public partial class AasService
             }
 
             if (!featureFlagSkipParseAAS)
-                return HoDParser.parseHandoverDocumentationSubmodels(receivedHoDs.Values.ToList(), baseUrl, aasIdentifier);
+                return HoDParser.parseHandoverDocumentationSubmodels(receivedHoDs.Values.ToList(), $"{baseUrl}/shells", shellIdEncoded);
 
             // Fallback, since the AAS libary does not work on arm64
             JsonObject hodJsonObject = null;

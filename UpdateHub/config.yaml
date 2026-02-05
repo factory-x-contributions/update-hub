@@ -5,7 +5,6 @@ aas-servers:
   url: http://aas-db:5001/
   auth:
 
-
 - name: SampleAasServerOAuth2
   id-link-prefix: https://sample-company-1.com/
   url: https://sample-company-1.com/aas
@@ -15,39 +14,52 @@ aas-servers:
     client-secret: your-client-secret
     token-url: https://sample-company-1.com/auth/realms/realm1/protocol/openid-connect/token
 
-- name: SampleAasServerApiKey
-  id-link-prefix: https://sample-company-2.com/
-  url: https://sample-company-1.com/products/aas
-  auth:
-    auth-type: apikey
-    api-key: your-api-key
+  - name: SampleAasServerOAuth2
+    id-link-prefix: https://sample-company-1.com/
+    url: https://sample-company-1.com/aas
+    auth:
+      auth-type: oauth2
+      client-id: your-client-id
+      client-secret: your-client-secret
+      token-url: https://sample-company-1.com/auth/realms/realm1/protocol/openid-connect/token
 
-- name: SampleAasServerBearerToken
-  id-link-prefix: https://sample-company-2.com/
-  url: https://sample-company-1.com/products/aas
-  auth:
-    auth-type: bearertoken
-    bearer-token: your-bearer-token
+  - name: SampleAasServerApiKey
+    id-link-prefix: https://sample-company-2.com/
+    url: https://sample-company-1.com/products/aas
+    auth:
+      auth-type: apikey
+      api-key: your-api-key
 
-- name: SampleAasServerHilscherLogin
-  id-link-prefix: https://sample-company-2.com/
-  version: v30 # v30 or basyx (default)
-  url: https://sample-company-1.com/products/aas
-  discovery-url: https://sample-company-1.com/products/aas/v3.0 # Only used for v30
-  auth:
+  - name: SampleAasServerBearerToken
+    id-link-prefix: https://sample-company-2.com/
+    url: https://sample-company-1.com/products/aas
+    auth:
+      auth-type: bearertoken
+      bearer-token: your-bearer-token
+
+  - name: SampleAasServerHilscherLogin
+    id-link-prefix: https://sample-company-2.com/
+    version: v30 # v30 or basyx (default)
+    url: https://sample-company-1.com/products/aas
+    discovery-url: https://sample-company-1.com/products/aas/v3.0 # Only used for v30
+    auth:
       auth-type: hilscher
       client-id: my-client-id
       secret: my-secret
       login-url: https://hilscher-aas.netiot.com/login
 
-- name: SampleAasServerv30
-  id-link-prefix: https://sample-company-2.com/
-  version: v30 # v30 or basyx (default)
-  url: https://sample-company-1.com/products/aas
-  discovery-url: https://sample-company-1.com/products/aas/v3.0 # Only used for v30
-  auth:
+  - name: SampleAasServerv30
+    id-link-prefix: https://sample-company-2.com/
+    version: v30 # v30 or basyx (default)
+    url: https://sample-company-1.com/products/aas
+    discovery-url: https://sample-company-1.com/products/aas/v3.0 # Only used for v30
+    auth:
 
-irs:
-  url: https://irs-sample-server.de/irs
-  username: my-username
-  password: my-password
+irs: # can be used with v1 (default) or v2 of the irs API
+  api-version: v2 # switch for v2
+  url: https://irs-sample-server.de/irs # for v1
+  username: my-username # for v1
+  password: my-password # for v1
+  client-id: my-client-id # for v2
+  client-secret: my-client-secret # for v2
+  token-url: https://sample-company-1.com/auth/token # for v2

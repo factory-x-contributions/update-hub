@@ -13,7 +13,7 @@ namespace UpdateHub.Domain
 {
     public class HoDParser // for Handover Documentation *V1.2*
     {
-        public static List<HandoverDocumentation> parseHandoverDocumentationSubmodels(List<JsonNode> hodSubmodels, string baseUrl, string aasIdentifier)
+        public static List<HandoverDocumentation> parseHandoverDocumentationSubmodels(List<JsonNode> hodSubmodels, string baseUrl, string aasIdentifierEnc)
         {
             const string sIDv120 = "0173-1#01-AHF578#001"; // Handover Documentation V1.2.0
             const string sIDv200 = "0173-1#01-AHF578#003"; // Handover Documentation V2.0.0
@@ -35,7 +35,7 @@ namespace UpdateHub.Domain
                 {
                     case sIDv120:
                         Log.Information("Handover Documentation V1.2.0 found");
-                        handoverDocs.AddRange(parseHoDV120(hodSubmodel, baseUrl, aasIdentifier));
+                        handoverDocs.AddRange(parseHoDV120(hodSubmodel, baseUrl, aasIdentifierEnc));
                         break;
                     case sIDv200:
                         Log.Information("Handover Documentation V2.0.0 found");
@@ -43,7 +43,7 @@ namespace UpdateHub.Domain
                         // handoverDocs.AddRange(parseHoDV200(hodSubmodel));
                         break;
                     default:
-                        Log.Error("Unknown Handover Documentation version found");
+                        Log.Error($"Unknown Handover Documentation version found: {hodSubmodel.GetSemanticKey().Value}");
                         throw new InvalidOperationException("Unknown Handover Documentation version found");
                 }
             }
@@ -108,7 +108,7 @@ namespace UpdateHub.Domain
         }
 
         // parseHandoverDocumentationSubmodels for V1.2.0
-        private static List<HandoverDocumentation> parseHoDV120(Submodel hodSubmodel, String baseUrl, String aasIdentifier)
+        private static List<HandoverDocumentation> parseHoDV120(Submodel hodSubmodel, String baseUrl, String aasIdentifierEnc)
         {
             var documents = new List<HandoverDocumentation>();
             var collection = new List<SubmodelElementCollection>();
@@ -216,16 +216,22 @@ namespace UpdateHub.Domain
                 // handle digitalFilePath to provide, if neccessary, an AAS API call
                 if (digitalFilePath.Substring(0, 4).Contains("http") == false)
                 {
-                    Log.Information($"Shell Id: {aasIdentifier}");
-                    var aasIdentifierEnc = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(aasIdentifier));
-                    aasIdentifierEnc = aasIdentifierEnc.Remove(aasIdentifierEnc.Length - 2);
+                    Log.Information($"Shell Id: {aasIdentifierEnc}");
+                    // var aasIdentifierEnc = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(aasIdentifier));
+                    // aasIdentifierEnc = aasIdentifierEnc.Remove(aasIdentifierEnc.Length - 2);
                     var submodelIdentifierEnc = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(hodSubmodel.Id));
                     submodelIdentifierEnc = submodelIdentifierEnc = submodelIdentifierEnc.Remove(submodelIdentifierEnc.Length - 2);
                     var idShortPath = $"{col.IdShort}.{DocumentVersionCollection.IdShort}.{digitalFileProperty.IdShort}"; // e.g. Document_01.DocumentVersion.DigitalFile
                     // specific for each shell, apparently legacy?
                     // digitalFilePath = $"{baseUrl}shells/{aasIdentifierEnc}/submodels/{submodelIdentifierEnc}/submodel-elements/{idShortPath}/attachment";
                     // new, go directly to submodel
-                    digitalFilePath = $"{baseUrl}submodels/{submodelIdentifierEnc}/submodel-elements/{idShortPath}/attachment";
+                    // Hilscher: hilscher-aas-server.com/submodels/...../attachment
+                    // Siemens (via IRS): irs.codewerk.com/submodels/....../attachment (funktioniert nicht, aber sollte)
+                    // Siemens (via IRS): aas.siemens.com/submodels/....../attachment (funktioniert, aber darf nicht)
+                    // irs/api/v1 (not working): https://demo.codewerk.de/irs/api/v1/docs#/
+                    // digitalFilePath = $"{baseUrl}submodels/{submodelIdentifierEnc}/submodel-elements/{idShortPath}/attachment";
+                    // irs/api/v2: https://demo.codewerk.de/irs/api/v2/docs#
+                    digitalFilePath = $"{baseUrl}/{aasIdentifierEnc}/submodels/{submodelIdentifierEnc}/submodel-elements/{idShortPath}/attachment";
                 }
 
 

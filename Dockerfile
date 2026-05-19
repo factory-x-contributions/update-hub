@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2026 Fraunhofer-Institut für Produktionstechnik und Automatisierung IPA
+# SPDX-FileCopyrightText: 2026 Hilscher Gesellschaft für Systemautomation mbH
+# SPDX-FileCopyrightText: 2026 Siemens AG
+#
+# SPDX-License-Identifier: Apache-2.0
+
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 RUN apt-get update && apt-get install -y curl
 USER $APP_UID

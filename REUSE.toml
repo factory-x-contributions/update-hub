@@ -1,0 +1,44 @@
+version = 1
+
+[[annotations]]
+path = [
+    "LICENSE",
+    "LICENSES/**",
+]
+SPDX-FileCopyrightText = [
+    "2026 Fraunhofer-Institut für Produktionstechnik und Automatisierung IPA",
+    "2026 Hilscher Gesellschaft für Systemautomation mbH",
+    "2026 Siemens AG",
+]
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [
+    "REUSE.toml",
+    "*.md",
+    "*.json",
+    "*.yaml",
+    "*.yml",
+    "*.sln",
+    "**/*.json",
+    "**/*.yaml",
+    "**/*.yml",
+    "**/*.csproj",
+    "**/*.hurl",
+    "*.lock",
+    ".editorconfig",
+    ".gitignore",
+    ".dockerignore",
+    ".config/**",
+    ".github/**",
+    "compose/**",
+    "wiremock/**",
+    "UpdateHub/Properties/**",
+    "UpdateHub/Justfile",
+]
+SPDX-FileCopyrightText = [
+    "2026 Fraunhofer-Institut für Produktionstechnik und Automatisierung IPA",
+    "2026 Hilscher Gesellschaft für Systemautomation mbH",
+    "2026 Siemens AG",
+]
+SPDX-License-Identifier = "Apache-2.0"

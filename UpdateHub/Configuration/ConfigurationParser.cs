@@ -131,7 +131,8 @@ public class Parser
           {
             ClientId = oauth2.ClientId,
             ClientSecret = oauth2.ClientSecret,
-            TokenUrl = oauth2.TokenUrl
+            TokenUrl = oauth2.TokenUrl,
+            Scope = oauth2.Scope
           };
           break;
 

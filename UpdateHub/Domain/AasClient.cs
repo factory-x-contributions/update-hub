@@ -63,9 +63,9 @@ public interface IAasApi
     [AliasAs("paging_metadata")] public JsonNode Paging { get; set; }
   }
 
-  [Get("/lookup/shells?assetIds={idLink}")]
+  [Get("/lookup/shells")]
   [Headers("Content-Type: application/json")]
-  Task<ApiResponse<ShellDesciLookupShellsByAssetIdsResponse>> LookupShellsByAssetIds(string idLink);
+  Task<ApiResponse<ShellDesciLookupShellsByAssetIdsResponse>> LookupShellsByAssetIds([Query("assetIds")] string assetIds);
 
   public class SubmodelDescriptors
   {
@@ -97,4 +97,8 @@ public interface IAasApi
   [Get("/shells/{id}/submodels/{modelId}")]
   [Headers("Content-Type: application/json")]
   Task<ApiResponse<JsonNode>> GetSubmodelsFromShell(string id, string modelId);
+
+  [Get("/submodels/{modelId}")]
+  [Headers("Content-Type: application/json")]
+  Task<ApiResponse<JsonNode>> GetSubmodel(string modelId);
 }

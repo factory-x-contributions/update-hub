@@ -33,6 +33,9 @@ public class TokenEndpointRequestCredentialsFlow : TokenEndpointRequest
 
     [AliasAs("client_secret")]
     public string ClientSecret { get; set; }
+
+    [AliasAs("scope")]
+    public string Scope { get; set; }
 }
 
 public class TokenEndpointRequestPasswordFlow : TokenEndpointRequest
@@ -74,6 +77,7 @@ public class Oauth2CredentialsFlow : IAuth
     public string ClientId { get; set; }
     public string ClientSecret { get; set; }
     public string TokenUrl { get; set; }
+    public string Scope { get; set; }
 
     public bool Authenticate(HttpClient httpClient, IHttpClientFactory httpClientFactory)
     {
@@ -85,12 +89,17 @@ public class Oauth2CredentialsFlow : IAuth
         var tokenHttpClient = httpClientFactory.CreateClient();
         tokenHttpClient.BaseAddress = new Uri(TokenUrl);
         var _restApiService = RestService.For<IOauth2Token>(tokenHttpClient);
-        var token = _restApiService.GetAccessToken(new TokenEndpointRequestCredentialsFlow
+        var tokenRequest = new TokenEndpointRequestCredentialsFlow
         {
             ClientId = ClientId,
             ClientSecret = ClientSecret,
             GrantType = "client_credentials"
-        }).Result;
+        };
+
+        if (!string.IsNullOrWhiteSpace(Scope))
+            tokenRequest.Scope = Scope;
+
+        var token = _restApiService.GetAccessToken(tokenRequest).Result;
 
         if (!token.IsSuccessful || (token.StatusCode != HttpStatusCode.OK))
         {

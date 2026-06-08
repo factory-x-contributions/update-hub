@@ -12,5 +12,6 @@ namespace UpdateHub.Configuration
     public string ClientSecret { get; set; }
 
     public string TokenUrl { get; set; }
+    public string Scope { get; set; }
   }
 }

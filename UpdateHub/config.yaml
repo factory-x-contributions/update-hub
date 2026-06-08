@@ -22,6 +22,7 @@ aas-servers:
       client-id: your-client-id
       client-secret: your-client-secret
       token-url: https://sample-company-1.com/auth/realms/realm1/protocol/openid-connect/token
+      scope: scopes separated by spaces ## optional, only needed if the token endpoint requires specific scopes
 
   - name: SampleAasServerApiKey
     id-link-prefix: https://sample-company-2.com/

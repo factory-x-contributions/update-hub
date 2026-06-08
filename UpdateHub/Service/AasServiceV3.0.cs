@@ -20,6 +20,18 @@ namespace UpdateHub.Service;
 
 public partial class AasService
 {
+    /// <summary>
+    /// Fetches a submodel, falling back to GET /submodels/{id} if GET /shells/{shellId}/submodels/{id} returns 404.
+    /// </summary>
+    private ApiResponse<JsonNode> GetSubmodelWithFallback(IAasApi restApiService, string shellIdEncoded, string submodelIdEncoded)
+    {
+        var shell = restApiService.GetSubmodelsFromShell(shellIdEncoded, submodelIdEncoded).Result;
+        if (shell.StatusCode == HttpStatusCode.NotFound)
+        {
+            shell = restApiService.GetSubmodel(submodelIdEncoded).Result;
+        }
+        return shell;
+    }
 
     private List<UpdateInformation> getSoftwareUpdateV3(string idLink, AasServer aasServer, bool featureFlagSkipParseAAS)
     {
@@ -28,7 +40,7 @@ public partial class AasService
             if (!aasServer.Auth.Authenticate(httpClient, _httpClientFactory))
                 throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication");
 
-        httpClient.BaseAddress = new Uri(aasServer.Url);
+        httpClient.BaseAddress = new Uri(aasServer.Url.TrimEnd('/'));
         var _restApiService = RestService.For<IAasApi>(httpClient);
 
         // Temporary, till Discovery Endpoints differs from other ones...
@@ -38,7 +50,7 @@ public partial class AasService
                 throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication");
 
         // TODO: Flexible Discovery URL
-        httpClientDiscovery.BaseAddress = new Uri(aasServer.DiscoveryUrl);
+        httpClientDiscovery.BaseAddress = new Uri(aasServer.DiscoveryUrl.TrimEnd('/'));
         var _restApiServiceDiscovery = RestService.For<IAasApi>(httpClientDiscovery);
         try
         {
@@ -53,13 +65,21 @@ public partial class AasService
             // type. But, why does the AAS server does not issue a proper HTTP status code?
             // Workaround with check for MediaType "text/html"
             if (shellIds.StatusCode == HttpStatusCode.Unauthorized ||
-                shellIds.ContentHeaders.ContentType.MediaType == "text/html")
+                shellIds.ContentHeaders.ContentType?.MediaType == "text/html")
                 throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while access AAS server");
+
+            if (shellIds.StatusCode == HttpStatusCode.NotFound)
+            {
+                AasNotFound.Add(1, new KeyValuePair<string, object>("IdLink", idLink.ToString()));
+                throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No shells found for given IdLink");
+            }
 
             if (!shellIds.IsSuccessful)
                 throw new HttpProblemResponseException(StatusCodes.Status422UnprocessableEntity, "Error while fetching IdLink from AAS server");
 
-            if (shellIds.Content.Result.Count == 0)
+            var shellIdsList = shellIds.Content?.Result ?? new List<string>();
+
+            if (shellIdsList.Count == 0)
             {
                 AasNotFound.Add(1, new KeyValuePair<string, object>("IdLink", idLink.ToString()));
                 throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No shells found for given IdLink");
@@ -71,7 +91,7 @@ public partial class AasService
             Dictionary<string, JsonNode> receivedPcns = new();
             Dictionary<string, JsonNode> receivedSoftwareNameplates = new();
 
-            foreach (var shellId in shellIds.Content.Result) //TODO Result
+            foreach (var shellId in shellIdsList)
             {
                 var shellIdEncoded = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId));
                 var response = _restApiService.GetShell(shellIdEncoded).Result;
@@ -85,8 +105,8 @@ public partial class AasService
                         if (rr["type"].ToString().ToUpper().Equals("SUBMODEL"))
                         {
                             var id = rr?["value"].ToString();
-                            var shell = _restApiService
-                              .GetSubmodelsFromShell(shellIdEncoded, Base64Url.EncodeToString(Encoding.UTF8.GetBytes(id))).Result;
+                                                        var shell = GetSubmodelWithFallback(_restApiService, shellIdEncoded,
+                                                            Base64Url.EncodeToString(Encoding.UTF8.GetBytes(id)));
 
                             if (!shell.IsSuccessful)
                                 throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError,
@@ -96,9 +116,9 @@ public partial class AasService
                             {
                                 var smId = shell.Content?["id"].ToString();
 
-                                var pcn = _restApiService
-                                  .GetSubmodelsFromShell(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)),
-                                    Base64Url.EncodeToString(Encoding.UTF8.GetBytes(smId))).Result;
+                                                                var pcn = GetSubmodelWithFallback(_restApiService,
+                                  Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)),
+                                                                    Base64Url.EncodeToString(Encoding.UTF8.GetBytes(smId)));
                                 if (!pcn.IsSuccessful)
                                     throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError, "Error while fetching Product Change Notification from AAS server");
 
@@ -110,9 +130,9 @@ public partial class AasService
                             {
                                 var smId = shell.Content?["id"].ToString();
 
-                                var nameplate = _restApiService
-                                  .GetSubmodelsFromShell(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)),
-                                    Base64Url.EncodeToString(Encoding.UTF8.GetBytes(smId))).Result;
+                                                                var nameplate = GetSubmodelWithFallback(_restApiService,
+                                  Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)),
+                                                                    Base64Url.EncodeToString(Encoding.UTF8.GetBytes(smId)));
                                 if (!nameplate.IsSuccessful)
                                     throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError, "Error while fetching Software Nameplate from AAS server");
 
@@ -166,7 +186,7 @@ public partial class AasService
             if (!aasServer.Auth.Authenticate(httpClient, _httpClientFactory))
                 throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication");
 
-        httpClient.BaseAddress = new Uri(aasServer.Url);
+        httpClient.BaseAddress = new Uri(aasServer.Url.TrimEnd('/'));
         var _restApiService = RestService.For<IAasApi>(httpClient);
 
         // Temporary, till Discovery Endpoints differs from other ones...
@@ -176,7 +196,7 @@ public partial class AasService
                 throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while executing authentication");
 
         // TODO: Flexible Discovery URL
-        httpClientDiscovery.BaseAddress = new Uri(aasServer.DiscoveryUrl);
+        httpClientDiscovery.BaseAddress = new Uri(aasServer.DiscoveryUrl.TrimEnd('/'));
         var _restApiServiceDiscovery = RestService.For<IAasApi>(httpClientDiscovery);
         try
         {
@@ -191,13 +211,21 @@ public partial class AasService
             // type. But, why does the AAS server does not issue a proper HTTP status code?
             // Workaround with check for MediaType "text/html"
             if (shellIds.StatusCode == HttpStatusCode.Unauthorized ||
-                shellIds.ContentHeaders.ContentType.MediaType == "text/html")
+                shellIds.ContentHeaders.ContentType?.MediaType == "text/html")
                 throw new HttpProblemResponseException(StatusCodes.Status401Unauthorized, "Error while access AAS server");
+
+            if (shellIds.StatusCode == HttpStatusCode.NotFound)
+            {
+                AasNotFound.Add(1, new KeyValuePair<string, object>("IdLink", idLink.ToString()));
+                throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No shells found for given IdLink");
+            }
 
             if (!shellIds.IsSuccessful)
                 throw new HttpProblemResponseException(StatusCodes.Status422UnprocessableEntity, "Error while fetching IdLink from AAS server");
 
-            if (shellIds.Content.Result.Count == 0)
+            var shellIdsList = shellIds.Content?.Result ?? new List<string>();
+
+            if (shellIdsList.Count == 0)
             {
                 AasNotFound.Add(1, new KeyValuePair<string, object>("IdLink", idLink.ToString()));
                 throw new HttpProblemResponseException(StatusCodes.Status404NotFound, "No shells found for given IdLink");
@@ -210,7 +238,7 @@ public partial class AasService
 
             var aasIdentifier = ""; // FIXME: assuming, that there is only one shellId that is used, i.e: for loop is unnecessary (would only occur if there are more than one shell with the same identifier)
             var shellIdEncoded = "";
-            foreach (var shellId in shellIds.Content.Result) //TODO Result
+            foreach (var shellId in shellIdsList)
             {
                 aasIdentifier = shellId;
                 shellIdEncoded = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId));
@@ -225,8 +253,8 @@ public partial class AasService
                         if (rr["type"].ToString().ToUpper().Equals("SUBMODEL"))
                         {
                             var id = rr?["value"].ToString();
-                            var shell = _restApiService
-                              .GetSubmodelsFromShell(shellIdEncoded, Base64Url.EncodeToString(Encoding.UTF8.GetBytes(id))).Result;
+                                                        var shell = GetSubmodelWithFallback(_restApiService, shellIdEncoded,
+                                                            Base64Url.EncodeToString(Encoding.UTF8.GetBytes(id)));
 
                             if (!shell.IsSuccessful)
                                 throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError,
@@ -236,9 +264,9 @@ public partial class AasService
                             {
                                 var smId = shell.Content?["id"].ToString();
 
-                                var hod = _restApiService
-                                  .GetSubmodelsFromShell(Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)),
-                                    Base64Url.EncodeToString(Encoding.UTF8.GetBytes(smId))).Result;
+                                                                var hod = GetSubmodelWithFallback(_restApiService,
+                                  Base64Url.EncodeToString(Encoding.UTF8.GetBytes(shellId)),
+                                                                    Base64Url.EncodeToString(Encoding.UTF8.GetBytes(smId)));
                                 if (!hod.IsSuccessful)
                                     throw new HttpProblemResponseException(StatusCodes.Status500InternalServerError, "Error while fetching Handover Documentation from AAS server");
 

@@ -20,6 +20,9 @@ C4Context
   Rel_Down(uh, ip2, "asks for PCNs")
 ```
 
+> [!IMPORTANT]
+> **This repository is archived.** It will receive no further development or maintenance. Interested parties are invited to fork the repository and continue the work independently.
+
 ## Build && Run && Test
 
 ```bash
